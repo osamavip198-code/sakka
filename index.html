@@ -1,0 +1,1516 @@
+<!doctype html>
+<html lang="ar-SA" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>صكّة | طاولة البوتات بالصوت</title>
+<meta name="description" content="العب جولة صن مع ثلاثة بوتات وكلّمهم بالصوت. بدون تسجيل دخول.">
+<meta property="og:title" content="صكّة | طاولة البوتات بالصوت">
+<meta property="og:description" content="العب جولة صن مع ثلاثة بوتات وكلّمهم بالصوت. بدون تسجيل دخول.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* A modern majlis seen from above: calm felt-like rugs so the cards win, regional craft kept to the edges. */
+:root {
+  color-scheme: dark;
+  --ink: #06211c;
+  --emerald-900: #08302a;
+  --emerald-700: #0f4f44;
+  --emerald-500: #1a7a68;
+  --ivory: #f6efdf;
+  --ivory-dim: #c9c6b4;
+  --copper: #d08a4e;
+  --copper-bright: #eeb077;
+  --card: #fbf6ea;
+  --card-line: #d9cfb8;
+  --suit-dark: #14201d;
+  --suit-red: #c2262e;
+  --suit-blue: #1a57b8;
+  --suit-green: #12704a;
+  --bad: #ffb4a8;
+  --display: 'Reem Kufi', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --body: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --index: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--ink); color: var(--ivory); font-family: var(--body); overflow: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+button:focus-visible { outline: 2px solid var(--copper-bright); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+
+#app { height: 100%; display: flex; flex-direction: row; }
+
+/* Control panel: a sidebar when wide, a bottom sheet when narrow */
+#panel { width: 310px; flex: none; padding: 28px 24px; display: flex; flex-direction: column; gap: 22px; overflow-y: auto; border-inline-end: 1px solid rgb(246 239 223 / .1); }
+#panel h1 { font: 700 30px/1.2 var(--display); }
+#panel .lead { font-size: 14px; line-height: 1.7; color: var(--ivory-dim); }
+.group { display: flex; flex-direction: column; gap: 8px; }
+.group > span { font-size: 13px; font-weight: 500; color: var(--ivory-dim); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { flex: 1 1 auto; min-height: 42px; padding: 6px 10px; border-radius: 10px; background: rgb(246 239 223 / .07); font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--ivory); color: var(--ink); font-weight: 700; }
+.note { font-size: 12px; line-height: 1.7; color: var(--ivory-dim); border-top: 1px solid rgb(246 239 223 / .12); padding-top: 14px; }
+#panelClose { display: none; }
+
+#main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+#strip { display: flex; align-items: center; gap: 6px; padding: 10px 16px; flex: none; }
+#strip .tab { min-height: 40px; padding: 4px 14px; border-radius: 999px; font-size: 14px; color: var(--ivory-dim); }
+#strip .tab[aria-current="page"] { background: rgb(246 239 223 / .12); color: var(--ivory); font-weight: 700; }
+#panelOpen { display: none; margin-inline-start: auto; min-height: 40px; padding: 4px 12px; border-radius: 999px; background: rgb(246 239 223 / .08); font-size: 14px; }
+#host { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+#frame { position: absolute; top: 0; left: 0; transform-origin: top left; overflow: hidden; background: var(--emerald-900); }
+#frame.device { border-radius: 34px; box-shadow: 0 0 0 8px #020d0b, 0 30px 70px rgb(0 0 0 / .55); }
+.screen { position: absolute; inset: 0; display: flex; flex-direction: column; }
+
+/* Scene */
+.scene { position: absolute; inset: 0; overflow: hidden; background: var(--floor); }
+.scene .wall { position: absolute; inset: 0 0 auto 0; height: var(--wall-h, 74px); background-image: var(--wall-img); background-size: auto 100%; box-shadow: 0 8px 18px rgb(0 0 0 / .4); }
+.scene .bolster { position: absolute; top: calc(var(--wall-h, 74px) + 8px); bottom: 0; width: 15px; background-image: var(--band-img); background-size: 100% auto; }
+.scene .bolster.a { right: 0; } .scene .bolster.b { left: 0; }
+.scene .rug { position: absolute; inset: calc(var(--wall-h, 74px) + 8px) 8px 8px; border-radius: 4px; background: var(--rug); box-shadow: 0 0 0 2px var(--rug-edge), 0 10px 26px rgb(0 0 0 / .45); overflow: hidden; }
+.scene .rug::before { content: ""; position: absolute; inset: 0; padding: 14px; opacity: .55; background: var(--band-img) 0 0 / 14px 14px round; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+.scene .rug::after { content: ""; position: absolute; left: 50%; top: var(--medal-y, 50%); width: var(--medal, 300px); height: var(--medal, 300px); transform: translate(-50%, -50%); background: var(--star-img) center / contain no-repeat; opacity: .06; }
+.scene .tray { position: absolute; top: calc(var(--wall-h, 74px) + 34px); left: 40px; width: 62px; height: 62px; background: var(--tray-img) center / contain no-repeat; filter: drop-shadow(0 3px 5px rgb(0 0 0 / .45)); }
+.scene .tray, .scene .bolster { display: none; }
+.hero .scene { --medal: 250px; --medal-y: 42%; }
+.share .scene { --medal: 170px; }
+.scene .light { position: absolute; inset: 0; pointer-events: none; transition: background .5s; }
+[data-time="day"] .scene .light { background: linear-gradient(115deg, rgb(255 226 170 / .16), transparent 50%); }
+[data-time="night"] .scene .light { background: radial-gradient(circle at 50% 46%, rgb(255 190 110 / .13), rgb(3 10 24 / .55) 72%); }
+
+/* Home */
+.home { padding: 14px 16px 18px; gap: 14px; overflow-y: auto; background: var(--emerald-900); }
+.bar { display: flex; align-items: center; justify-content: space-between; }
+.logo { font: 700 30px/1 var(--display); color: var(--ivory); display: flex; align-items: center; gap: 8px; }
+.logo i { width: 15px; height: 15px; background: var(--copper); transform: rotate(45deg); border-radius: 2px; }
+.tag { font-size: 11px; color: var(--ivory-dim); }
+.me { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.face { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--emerald-700); box-shadow: 0 0 0 2px var(--copper); font: 700 16px var(--body); color: var(--ivory); flex: none; }
+.face.empty { background: transparent; box-shadow: 0 0 0 2px rgb(246 239 223 / .4); color: var(--ivory-dim); }
+.hero { position: relative; border-radius: 20px; overflow: hidden; min-height: 330px; flex: 1 0 330px; --wall-h: 52px; display: flex; flex-direction: column; justify-content: flex-end; }
+.hero .inner { position: relative; padding: 30px 40px 26px; display: flex; flex-direction: column; gap: 14px; }
+.hero h2 { font: 700 26px/1.25 var(--display); text-align: center; text-wrap: balance; text-shadow: 0 2px 6px rgb(0 0 0 / .6); }
+.hero .sub { font-size: 14px; color: var(--ivory); opacity: .88; }
+.seats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.ring { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto auto; row-gap: 4px; justify-items: center; }
+.ring .r2 { grid-area: 1 / 2; } .ring .r1 { grid-area: 2 / 1; } .ring .r3 { grid-area: 2 / 3; } .ring .r0 { grid-area: 3 / 2; }
+.seat { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; text-align: center; }
+.cta { min-height: 56px; border-radius: 0; clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%); background: var(--copper-bright); color: var(--ink); font: 700 18px var(--body); transition: transform .12s, background .12s; }
+.cta:hover, .cta:focus-visible { background: #f9d3ae; outline: none; } .cta:active { transform: scale(.98); }
+.ghost { min-height: 50px; padding: 6px 14px; border-radius: 14px; background: rgb(246 239 223 / .1); font-size: 15px; font-weight: 500; }
+.ghost:hover { background: rgb(246 239 223 / .17); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.section-title { font: 500 15px var(--display); color: var(--ivory-dim); }
+.regions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.region { display: flex; flex-direction: column; gap: 5px; align-items: stretch; font-size: 12px; text-align: center; border-radius: 12px; padding: 4px; }
+.region .mini { position: relative; height: 56px; border-radius: 9px; overflow: hidden; --wall-h: 18px; }
+.region .mini .rug { inset: 24px 8px 4px; box-shadow: 0 0 0 1px var(--rug-edge); }
+.region .mini .rug::before, .region .mini .rug::after, .region .mini .bolster { display: none; }
+.region[aria-pressed="true"] { background: rgb(246 239 223 / .14); font-weight: 700; }
+
+/* Invite */
+.invite { justify-content: flex-end; }
+.invite .sheet { position: relative; margin: 12px; padding: 22px 18px 18px; border-radius: 22px; background: rgb(6 33 28 / .94); display: flex; flex-direction: column; gap: 16px; }
+.invite h2 { font: 700 30px/1.3 var(--display); text-wrap: balance; }
+.invite p { font-size: 15px; line-height: 1.7; color: var(--ivory-dim); }
+.pick { box-shadow: 0 0 0 3px var(--copper-bright) !important; }
+.seat.open { cursor: pointer; border-radius: 12px; padding: 6px 2px; }
+.steps { display: none; }
+
+/* Table */
+.table { --wall-h: 58px; }
+.table[data-layout="landscape"] { --wall-h: 26px; }
+.table .hud { position: absolute; top: 8px; right: 12px; left: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; z-index: 5; }
+.score { display: flex; align-items: stretch; background: rgb(6 33 28 / .92); border-radius: 12px; padding: 5px 4px; }
+.score > div { min-width: 56px; text-align: center; padding-inline: 8px; }
+.score > div + div { border-inline-start: 1px solid rgb(246 239 223 / .18); }
+.score small { display: block; font-size: 11px; color: var(--ivory-dim); }
+.score b { font: 700 25px/1.05 var(--index); font-variant-numeric: tabular-nums; }
+.score > .modecell { min-width: 44px; }
+.score strong { display: block; font: 700 17px/1.45 var(--body); color: var(--copper-bright); }
+.proof-chip { display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 12px; border-radius: 12px; background: rgb(6 33 28 / .92); font-size: 13px; font-weight: 500; color: var(--copper-bright); }
+.proof-chip b { display: none; }
+.player { position: absolute; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 86px; font-size: 13px; font-weight: 500; text-shadow: 0 1px 3px rgb(0 0 0 / .85); }
+.player .face { width: 48px; height: 48px; font-size: 19px; transition: box-shadow .15s; }
+.player .count { font-size: 11px; color: var(--ivory-dim); }
+.player .face { position: relative; }
+.player.turn .face::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; box-shadow: 0 0 0 3px var(--ivory), 0 0 20px 6px rgb(238 176 119 / .8); animation: ring 1.1s ease-in-out infinite; }
+.player.team .face { background: var(--emerald-500); }
+.player.foe .face { background: var(--ivory); color: var(--ink); text-shadow: none; }
+@keyframes ring { 50% { opacity: .35; } }
+[data-layout="portrait"] .p1 { right: 14px; top: 26%; }
+[data-layout="portrait"] .p2 { left: calc(50% - 43px); top: 92px; }
+[data-layout="portrait"] .p3 { left: 14px; top: 26%; }
+[data-layout="landscape"] .p1 { right: 40px; top: 28%; }
+[data-layout="landscape"] .p2 { left: calc(50% - 43px); top: 8px; }
+[data-layout="landscape"] .p3 { left: 40px; top: 28%; }
+.pile { position: absolute; left: 50%; z-index: 2; width: 0; height: 0; }
+[data-layout="portrait"] .pile { top: 44%; }
+[data-layout="landscape"] .pile { top: 41%; }
+.tcard { position: absolute; left: 0; top: 0; transition: transform .24s cubic-bezier(.2,.8,.25,1), opacity .24s; }
+.status { position: absolute; z-index: 4; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 3px 14px; border-radius: 999px; background: rgb(6 33 28 / .9); font-size: 14px; font-weight: 700; }
+.status.mine { background: var(--copper-bright); color: var(--ink); }
+[data-layout="portrait"] .status { bottom: 182px; }
+[data-layout="landscape"] .status { bottom: 118px; }
+.hand { position: absolute; left: 0; right: 0; bottom: 0; direction: ltr; z-index: 6; }
+[data-layout="portrait"] .hand { height: 170px; }
+[data-layout="landscape"] .hand { height: 112px; }
+.hcard { position: absolute; bottom: -10px; padding: 0; border-radius: 9px; transition: transform .14s ease-out, translate .14s ease-out, left .22s, filter .15s; touch-action: manipulation; }
+[data-layout="portrait"] .hcard { bottom: 14px; }
+.hcard.legal:hover, .hcard.legal:focus-visible { transform: var(--rot) translateY(-20px) !important; z-index: 20; }
+.hcard.legal { translate: 0 -12px; }
+.hcard.dim .card { filter: brightness(.85) saturate(.7); }
+.hcard.shake { animation: shake .26s; }
+@keyframes shake { 25% { translate: -5px 0; } 75% { translate: 5px 0; } }
+.hcard.deal { animation: dealIn .34s cubic-bezier(.2,.8,.25,1) backwards; }
+@keyframes dealIn { from { opacity: 0; translate: 0 -220px; } }
+
+/* Cards */
+.card { position: relative; display: block; width: var(--w); height: var(--h); border-radius: 9px; background: var(--card); box-shadow: 0 0 0 1px var(--card-line), 0 3px 8px rgb(0 0 0 / .4); color: var(--suit-dark); direction: ltr; overflow: hidden; }
+.card.s-H { color: var(--suit-red); } .card.s-D { color: var(--suit-red); }
+[data-colors="4"] .card.s-D { color: var(--suit-blue); } [data-colors="4"] .card.s-C { color: var(--suit-green); }
+.card .idx { position: absolute; top: 3px; left: 4px; display: flex; flex-direction: column; align-items: center; width: calc(var(--w) * .42); max-width: 34px; font: 700 calc(var(--w) * .38)/.95 var(--index); }
+.card .idx svg { width: calc(var(--w) * .28); height: calc(var(--w) * .28); margin-top: 1px; }
+.card .pip { position: absolute; width: calc(var(--w) * .52); height: calc(var(--w) * .52); right: calc(var(--w) * .07); bottom: calc(var(--w) * .1); opacity: .95; }
+.card .pip svg { width: 100%; height: 100%; display: block; }
+.card .crest { position: absolute; right: calc(var(--w) * .06); bottom: calc(var(--w) * .08); width: calc(var(--w) * .6); height: calc(var(--w) * .6); display: grid; place-items: center; }
+.card .crest::before, .card .crest::after { content: ""; position: absolute; inset: 9%; border-radius: 3px; background: currentColor; }
+.card .crest::after { transform: rotate(45deg); }
+.card .crest span { position: relative; z-index: 1; color: var(--card); font: 700 calc(var(--w) * .17)/1 var(--display); }
+.sz-hand { --w: 76px; --h: 110px; }
+.sz-hand .pip { right: auto; left: 5px; bottom: 8px; width: 32px; height: 32px; }
+.sz-hand .crest { right: auto; left: 3px; bottom: 6px; width: 38px; height: 38px; }
+.sz-hand .crest span { font-size: 11px; }
+.sz-table { --w: 62px; --h: 90px; }
+[data-layout="landscape"] .sz-table { --w: 54px; --h: 78px; }
+[data-layout="landscape"] .sz-hand { --w: 78px; --h: 112px; }
+.sz-mini { --w: 34px; --h: 48px; }
+.sz-mini.card { border-radius: 5px; }
+.sz-mini .pip, .sz-mini .crest { display: none; }
+
+/* Sheets */
+.overlay { position: absolute; inset: 0; z-index: 30; background: rgb(2 12 10 / .62); display: flex; align-items: flex-end; justify-content: center; }
+.sheet-body { width: 100%; max-height: 92%; overflow-y: auto; background: var(--emerald-900); border-radius: 22px 22px 0 0; padding: 20px 18px; display: flex; flex-direction: column; gap: 14px; }
+[data-layout="landscape"] .sheet-body { max-width: 560px; }
+.sheet-body h2 { font: 700 24px/1.3 var(--display); text-wrap: balance; }
+.sheet-body p { font-size: 14px; line-height: 1.75; color: var(--ivory-dim); }
+.mono { font: 600 14px/1.5 var(--index); letter-spacing: .03em; direction: ltr; text-align: left; overflow-wrap: anywhere; padding: 10px; border-radius: 10px; background: rgb(0 0 0 / .28); color: var(--ivory); }
+.ok { color: #8fe6c0; font-weight: 700; font-size: 14px; }
+.share { position: relative; border-radius: 18px; overflow: hidden; min-height: 176px; --wall-h: 26px; }
+.share .inner { position: relative; padding: 42px 20px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+.share .big { font: 700 58px/1 var(--index); font-variant-numeric: tabular-nums; }
+.share .line { font: 500 14px var(--display); }
+.replay { display: flex; flex-direction: column; gap: 8px; }
+.trick-row { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--ivory-dim); }
+.trick-row .n { width: 20px; flex: none; font: 700 15px var(--index); }
+.trick-row .who { margin-inline-start: auto; text-align: left; }
+.trick-row .wrapcards { display: flex; gap: 4px; direction: ltr; }
+.trick-row .win { outline: 2px solid var(--copper-bright); outline-offset: 1px; border-radius: 5px; }
+details summary { cursor: pointer; font-weight: 700; font-size: 14px; min-height: 28px; color: var(--ivory); }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.actions .cta { font-size: 17px; }
+
+#toast { position: absolute; z-index: 40; left: 50%; top: 40%; transform: translateX(-50%); width: max-content; max-width: 86%; padding: 9px 16px; border-radius: 12px; background: var(--ivory); color: var(--ink); font-size: 14px; font-weight: 700; text-align: center; box-shadow: 0 8px 24px rgb(0 0 0 / .45); }
+
+@media (max-width: 819px) {
+  #app { flex-direction: column; }
+  #panel { position: fixed; inset: auto 0 0 0; width: auto; max-height: 82%; z-index: 60; background: var(--emerald-900); border-radius: 20px 20px 0 0; border: 0; padding: 18px 16px; transform: translateY(105%); transition: transform .22s; visibility: hidden; }
+  #panel.open { transform: none; visibility: visible; }
+  #panel h1 { font-size: 22px; }
+  #panelOpen, #panelClose { display: block; }
+  #panelClose { min-height: 44px; border-radius: 12px; background: var(--ivory); color: var(--ink); font-weight: 700; flex: none; }
+  #strip { padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); }
+  #strip .tab { padding-inline: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Voice controls stay beside the score and leave the hand unobstructed. */
+.voice-controls { display: flex; align-items: center; gap: 5px; }
+.voice-mic, .voice-help { min-height: 44px; padding: 0 9px; border-radius: 12px; background: var(--emerald-700); color: var(--ivory); font-weight: 700; font-size: 12px; }
+.voice-mic { display: flex; align-items: center; gap: 5px; border: 1px solid var(--copper); }
+.voice-mic svg { width: 16px; height: 16px; flex: none; }
+.voice-mic[aria-pressed="true"] { background: var(--copper-bright); color: var(--ink); }
+.voice-help { min-width: 36px; }
+.voice-caption { position: absolute; z-index: 5; inset-inline: 44px; bottom: 268px; margin: 0; padding: 8px 12px; border: 1px solid rgb(238 176 119 / .45); border-radius: 14px; background: #06211c; color: var(--ivory); text-align: center; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
+.voice-caption[hidden] { display: none; }
+.voice-caption small { display: block; margin-top: 2px; color: var(--ivory-dim); }
+[data-layout="landscape"] .voice-caption { inset-inline: 125px; bottom: 196px; }
+.voice-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 12px; }
+.acts { position: absolute; z-index: 7; left: 8px; right: 8px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+[data-layout="portrait"] .acts { bottom: 214px; }
+[data-layout="landscape"] .acts { bottom: 146px; inset-inline: 110px; }
+.acts:empty { display: none; }
+.acts button { min-height: 44px; padding: 4px 12px; border-radius: 12px; background: var(--emerald-700); color: var(--ivory); font-weight: 700; font-size: 14px; border: 1px solid rgb(238 176 119 / .5); }
+.acts button.main, .acts button[aria-pressed="true"] { background: var(--copper-bright); color: var(--ink); }
+.acts .acts-note { flex-basis: 100%; text-align: center; font-size: 12px; line-height: 1.5; color: var(--ivory); background: rgb(6 33 28 / .92); border-radius: 10px; padding: 4px 10px; }
+.bubble { margin-top: 2px; padding: 2px 9px; border-radius: 10px; background: var(--ivory); color: var(--ink); font-size: 12px; font-weight: 700; text-shadow: none; white-space: nowrap; }
+.faceup { position: absolute; left: 0; top: 0; transform: translate(-31px, -60px); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--ivory-dim); }
+#fx { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 35; pointer-events: none; }
+.score strong { white-space: nowrap; }
+.stats { font-size: 13px; line-height: 1.8; color: var(--ivory-dim); background: rgb(246 239 223 / .06); border-radius: 12px; padding: 10px 12px; }
+.breakdown { display: grid; grid-template-columns: 1fr 56px 56px; gap: 4px 10px; font-size: 13px; text-align: center; }
+.breakdown > :nth-child(3n+1) { text-align: start; color: var(--ivory-dim); }
+.breakdown strong { color: var(--copper-bright); }
+.pending { font-size: 12px; color: var(--bad) !important; }
+.voice-examples button { padding: 7px 12px; min-height: 44px; border-radius: 12px; background: var(--emerald-700); color: var(--ivory); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="s-H" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-8.5-5.3-10.4-10.4C.2 6.6 3 3 6.6 3 9 3 11 4.4 12 6.3 13 4.4 15 3 17.4 3 21 3 23.8 6.6 22.4 10.6 20.5 15.7 12 21 12 21z"/></symbol>
+  <symbol id="s-D" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5 20.5 12 12 22.5 3.5 12z"/></symbol>
+  <symbol id="s-S" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1.5s-9.5 7-9.5 12.7c0 3.4 2.7 5.4 5.3 5.4 1.2 0 2.3-.4 3-1.2-.2 1.4-.9 2.7-2.1 3.6h6.6c-1.2-.9-1.9-2.2-2.1-3.6.7.8 1.8 1.2 3 1.2 2.6 0 5.3-2 5.3-5.4C21.5 8.5 12 1.5 12 1.5z"/></symbol>
+  <symbol id="s-C" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="7" r="4.6"/><circle cx="6.5" cy="13.5" r="4.6"/><circle cx="17.5" cy="13.5" r="4.6"/><path d="M10.6 13h2.8c.1 3.7.9 6.4 3 9H7.6c2.1-2.6 2.9-5.3 3-9z"/></g></symbol>
+</svg>
+
+<div id="app">
+  <aside id="panel" aria-label="إعدادات النموذج">
+    <div class="group" style="gap:6px">
+      <h1>صكّة</h1>
+      <p class="tag">اسم مؤقت، لم يُفحص كعلامة تجارية</p>
+    </div>
+    <p class="lead">صكّة كاملة مع ثلاثة بوتات: تشتري، تعلن مشاريعك، وتتحقق من عدالة الخلط بنفسك.</p>
+    <div class="group"><span>المجلس</span><div class="seg" id="ctlRegion"></div></div>
+    <div class="group"><span>الوقت</span><div class="seg" id="ctlTime"></div></div>
+    <div class="group"><span>اتجاه الطاولة</span><div class="seg" id="ctlLayout"></div></div>
+    <div class="group"><span>ألوان الأشكال</span><div class="seg" id="ctlColors"></div></div>
+    <div class="group"><span>الصوت</span><div class="seg" id="ctlSound"></div></div>
+    <p class="note">للعرض فقط. تُطبَّق القواعد المؤكدة فقط في كتاب القواعد: الشراء على دورين (بدون أشكل ولا دبل)، صن وحكم، المشاريع والبلوت والكبوت، والصكة إلى 152. ما لم يحسمه المحكّم يظهر «معلّق» ولا يُفرض عليك. لم يعتمد المحكّم أي قاعدة بعد. البوتات والخلط يعملان في جهازك، والنتائج تُحفظ فيه فقط.</p>
+    <button id="panelClose" type="button">تم</button>
+  </aside>
+  <div id="main">
+    <nav id="strip" aria-label="شاشات النموذج">
+      <button class="tab" data-go="home" type="button">الرئيسية</button>
+      <button class="tab" data-go="invite" type="button">جرّب صكّة</button>
+      <button class="tab" data-go="table" type="button">الطاولة</button>
+      <button id="panelOpen" type="button">الإعدادات</button>
+    </nav>
+    <div id="host"><div id="frame"></div></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const svgUri = (w, h, body) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'>${body}</svg>`)}")`;
+
+/* ---------- Regional art, built from small repeatable tiles ---------- */
+const STAR = svgUri(300, 300, `<g fill='#fff'><rect x='62' y='62' width='176' height='176'/><rect x='62' y='62' width='176' height='176' transform='rotate(45 150 150)'/></g>`);
+const TRAY = svgUri(62, 62, `<circle cx='31' cy='31' r='29' fill='#b4703a'/><circle cx='31' cy='31' r='24.5' fill='#d08a4e' stroke='#8a5228' stroke-width='1.5'/><g fill='#fbf6ea'><circle cx='22' cy='23' r='6'/><circle cx='40' cy='23' r='6'/><circle cx='22' cy='41' r='6'/></g><g fill='#7d5a24'><circle cx='22' cy='23' r='4'/><circle cx='40' cy='23' r='4'/><circle cx='22' cy='41' r='4'/></g><g fill='#3a1d10'><ellipse cx='39' cy='39' rx='3' ry='2' transform='rotate(30 39 39)'/><ellipse cx='43' cy='43' rx='3' ry='2' transform='rotate(-20 43 43)'/><ellipse cx='37' cy='44' rx='3' ry='2' transform='rotate(70 37 44)'/></g>`);
+const REGIONS = {
+  hijazi: {
+    name: 'حجازي', floor: '#2a1c12', rug: '#0e4a42', edge: '#c79a62',
+    wall: svgUri(78, 74, `<rect width='78' height='74' fill='#3a2415'/><path d='M8 74V26a31 22 0 0 1 62 0v48z' fill='#24534d'/><g stroke='#d3ab78' stroke-width='1.6' fill='none'><path d='M8 74V26a31 22 0 0 1 62 0v48z' stroke-width='3'/><path d='M8 40h62M8 54h62M8 68h62M24 74V10M39 74V4M54 74V10'/><path d='M8 54 24 40l15 14 15-14 16 14M8 68l16-14 15 14 15-14 16 14'/></g>`),
+    band: svgUri(40, 40, `<rect width='40' height='40' fill='#2c5a50'/><path d='M20 3 37 20 20 37 3 20z' fill='#c79a62'/><path d='M20 12 28 20 20 28 12 20z' fill='#2c5a50'/>`),
+  },
+  najdi: {
+    name: 'نجدي', floor: '#3a2717', rug: '#5a1f1b', edge: '#e6d6b4',
+    wall: svgUri(40, 74, `<rect width='40' height='74' fill='#b98a5c'/><rect y='30' width='40' height='44' fill='#a97a4f'/><path d='M0 30 10 12l10 18 10-18 10 18z' fill='#f4ead5'/><path d='M0 74 10 58l10 16 10-16 10 16z' fill='#f4ead5'/><rect y='30' width='40' height='3' fill='#7a5233'/>`),
+    band: svgUri(40, 40, `<rect width='40' height='40' fill='#1d1512'/><rect y='0' width='40' height='9' fill='#c33a2b'/><rect y='31' width='40' height='9' fill='#c33a2b'/><path d='M0 30 10 10l10 20 10-20 10 20z' fill='#f4ead5'/>`),
+  },
+  southern: {
+    name: 'جنوبي', floor: '#262016', rug: '#123c3b', edge: '#f0c548',
+    wall: svgUri(48, 74, `<rect width='48' height='74' fill='#efe6cf'/><rect y='8' width='48' height='10' fill='#2f8a5b'/><rect y='18' width='48' height='14' fill='#f0c548'/><path d='M0 32 12 18l12 14 12-14 12 14z' fill='#c9352c'/><rect y='32' width='48' height='9' fill='#27427f'/><path d='M0 41h48L36 58 24 41 12 58z' fill='#14201d'/><rect y='66' width='48' height='8' fill='#c9352c'/>`),
+    band: svgUri(40, 40, `<rect width='40' height='40' fill='#27427f'/><path d='M0 0h40L20 20z' fill='#f0c548'/><path d='M0 40h40L20 20z' fill='#2f8a5b'/><path d='M0 0v40l20-20zM40 0v40L20 20z' fill='#c9352c'/>`),
+  },
+  coastal: {
+    name: 'ساحلي', floor: '#3b3226', rug: '#0b3b4c', edge: '#e6dcc4',
+    wall: svgUri(90, 74, `<rect width='90' height='74' fill='#d8cdb6'/><g fill='#bfb298'><rect x='2' y='6' width='24' height='9'/><rect x='30' y='6' width='28' height='9'/><rect x='62' y='6' width='26' height='9'/><rect x='14' y='20' width='22' height='9'/></g><path d='M46 74V36a18 18 0 0 1 36 0v38z' fill='#176d78'/><path d='M46 74V36a18 18 0 0 1 36 0v38z' fill='none' stroke='#f4ead5' stroke-width='3'/><path d='M64 18v56M46 46h36' stroke='#f4ead5' stroke-width='2'/>`),
+    band: svgUri(40, 40, `<rect width='40' height='40' fill='#e6dcc4'/><path d='M0 14q10-10 20 0t20 0v12q-10 10-20 0t-20 0z' fill='#176d78'/>`),
+  },
+};
+const sceneHtml = (r) => {
+  const R = REGIONS[r];
+  return `<div class="scene" style="--floor:${R.floor};--rug:radial-gradient(circle at 50% 45%, color-mix(in srgb, ${R.rug} 88%, #fff), ${R.rug} 75%);--rug-edge:${R.edge};--wall-img:${esc(R.wall)};--band-img:${esc(R.band)};--star-img:${esc(STAR)};--tray-img:${esc(TRAY)}"><div class="wall"></div><div class="bolster a"></div><div class="bolster b"></div><div class="rug"></div><div class="tray"></div><div class="light"></div></div>`;
+};
+
+/* ---------- Settings ---------- */
+const state = { screen: 'home', region: 'hijazi', time: 'night', layout: 'portrait', colors: '2', sound: 'on' };
+try { Object.assign(state, JSON.parse(localStorage.getItem('sakka') || '{}')); } catch {}
+if (!REGIONS[state.region]) state.region = 'hijazi';
+const save = () => { try { const { screen, ...rest } = state; localStorage.setItem('sakka', JSON.stringify(rest)); } catch {} };
+
+const frame = $('#frame');
+const CONTROLS = {
+  ctlRegion: ['region', Object.entries(REGIONS).map(([k, v]) => [k, v.name])],
+  ctlTime: ['time', [['day', 'نهار'], ['night', 'ليل']]],
+  ctlLayout: ['layout', [['portrait', 'طولية'], ['landscape', 'أفقية']]],
+  ctlColors: ['colors', [['2', 'لونان'], ['4', 'أربعة ألوان']]],
+  ctlSound: ['sound', [['on', 'يعمل'], ['off', 'مكتوم']]],
+};
+function renderControls() {
+  for (const [id, [key, opts]] of Object.entries(CONTROLS)) {
+    $('#' + id).innerHTML = opts.map(([v, l]) => `<button type="button" data-set="${key}" data-val="${v}" aria-pressed="${state[key] === v}">${l}</button>`).join('');
+  }
+}
+function setOpt(key, val) {
+  state[key] = val; save(); renderControls();
+  frame.dataset.time = state.time; frame.dataset.colors = state.colors;
+  if (key === 'region' || key === 'layout') { render(); }
+  fit();
+}
+
+/* ---------- Fit the fixed design size to any viewport ---------- */
+function fit() {
+  const host = $('#host');
+  const vw = host.clientWidth, vh = host.clientHeight;
+  const land = state.screen === 'table' && state.layout === 'landscape';
+  const wide = innerWidth >= 820;
+  frame.classList.toggle('device', wide);
+  let W, H, s, tf;
+  if (wide) {
+    const pad = 44;
+    W = land ? 844 : 390; H = land ? 390 : 800;
+    s = Math.min(1, (vw - pad) / W, (vh - pad) / H);
+    tf = `translate(${(vw - W * s) / 2}px, ${(vh - H * s) / 2}px) scale(${s})`;
+  } else if (!land) {
+    W = 390; s = vw / W; H = Math.max(620, vh / s);
+    if (H * s > vh) { s = vh / H; }
+    tf = `translate(${(vw - W * s) / 2}px, 0) scale(${s})`;
+  } else if (vw > vh) {
+    W = 844; H = 390; s = Math.min(vw / W, vh / H);
+    tf = `translate(${(vw - W * s) / 2}px, ${(vh - H * s) / 2}px) scale(${s})`;
+  } else {
+    W = 844; H = 390; s = Math.min(vh / W, vw / H);
+    tf = `translate(${(vw + H * s) / 2}px, ${(vh - W * s) / 2}px) rotate(90deg) scale(${s})`;
+  }
+  frame.style.width = W + 'px'; frame.style.height = H + 'px'; frame.style.transform = tf;
+}
+
+/* ---------- Rules: Saudi Baloot, CONFIRMED rules only (docs/RULES.md) ---------- */
+// Cards are suit + rank: 'HA', 'S10'. Seats: 0 you, 1 your right, 2 partner, 3 your left. Play passes to the right.
+// A situation that only an unsettled rule could decide is never enforced or scored. It is shown as pending instead.
+const SUITS = ['S', 'H', 'C', 'D'];
+const SUN_ORDER = ['A', '10', 'K', 'Q', 'J', '9', '8', '7'];   // R-401
+const TRUMP_ORDER = ['J', '9', 'A', '10', 'K', 'Q', '8', '7']; // R-402
+const SEQ_ORDER = ['A', 'K', 'Q', 'J', '10', '9', '8', '7'];   // R-403
+const SUN_PTS = { A: 11, 10: 10, K: 4, Q: 3, J: 2, 9: 0, 8: 0, 7: 0 }; // R-404
+const TRUMP_PTS = { ...SUN_PTS, J: 20, 9: 14 };
+const CREST = { K: 'شايب', Q: 'بنت', J: 'ولد' };
+const NAMES = ['أنت', 'أبو فهد', 'ماجد', 'تركي'];
+const SUIT_AR = { S: 'سبيت', H: 'هاص', C: 'شريها', D: 'ديمن' };
+const PROJ = { // R-801, R-806
+  SIRA: { h: 2, s: 4, rank: 1, ar: 'سرا' }, FIFTY: { h: 5, s: 10, rank: 2, ar: 'خمسين' },
+  HUNDRED_SEQ: { h: 10, s: 20, rank: 3, ar: 'مية' }, HUNDRED_KIND: { h: 10, s: 20, rank: 3, ar: 'مية' },
+  FOUR_HUNDRED: { h: 0, s: 40, rank: 4, ar: 'أربعمية' },
+};
+const OPEN_AR = {
+  'R-506': 'الدق بالحكم عندما يفقد اللاعب الشكل والخصم ماسك الأكلة (R-506) غير محسوم، فلم نُلزم به.',
+  'R-509': 'إلزام اللاعب الثالث بالحكم وشريكه ماسك الأكلة (R-509) غير محسوم، فلم نُلزم به.',
+  'R-707': 'تعادل الصن 65/65 (R-707) غير محسوم: لم تُحسب اليد.',
+  'R-711': 'مشاريع أو بلوت المشتري الخاسر (R-711) غير محسومة: لم تُحسب لأحد.',
+  'R-715': 'الكبوت المقلوب (R-715) من مصدر واحد: لم تُحسب اليد.',
+  'R-804': 'تسلسل أطول من خمس أوراق (R-804) ينتظر المحكّم: لم يُعلن مشروعه.',
+  'R-807': 'مية التسلسل مقابل مية الأربع (R-807) غير محسومة: لم تُحسب المشاريع.',
+  'R-809': 'تعادل المشاريع تمامًا (R-809) غير محسوم: لم تُحسب المشاريع.',
+  'R-818': 'بلوت داخل مية معروضة (R-818) غير محسوم: لم يُحسب البلوت.',
+  'R-903': 'تعادل الفريقين عند 152 أو أكثر (R-903) من مصدر واحد: الصكة معلّقة.',
+};
+const suitOf = (c) => c[0], rankOf = (c) => c.slice(1);
+const team = (seat) => seat % 2; // 0 = us, 1 = them
+const nextSeat = (seat) => (seat + 1) % 4;
+
+function secureInt(max) {
+  const lim = Math.floor(0x100000000 / max) * max, b = new Uint32Array(1);
+  do { crypto.getRandomValues(b); } while (b[0] >= lim);
+  return b[0] % max;
+}
+function shuffledDeck() {
+  const d = SUITS.flatMap((s) => SUN_ORDER.map((r) => s + r));
+  for (let i = d.length - 1; i > 0; i--) { const j = secureInt(i + 1); [d[i], d[j]] = [d[j], d[i]]; }
+  return d;
+}
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+const isTrump = (c) => G.contract === 'HOKUM' && suitOf(c) === G.trump;
+const cardPts = (c) => (isTrump(c) ? TRUMP_PTS : SUN_PTS)[rankOf(c)];
+const order = (c) => (isTrump(c) ? TRUMP_ORDER : SUN_ORDER).indexOf(rankOf(c)); // 0 = strongest
+function power(c, led) { // higher wins the trick
+  if (isTrump(c)) return 100 - order(c);
+  if (suitOf(c) === led) return 50 - order(c);
+  return -1;
+}
+function trickWinner(trick) {
+  const led = suitOf(trick[0].card);
+  return trick.reduce((a, b) => (power(b.card, led) > power(a.card, led) ? b : a));
+}
+const trickPoints = (trick) => trick.reduce((n, t) => n + cardPts(t.card), 0);
+
+// Returns the legal cards and, when an unsettled rule was left unenforced, its id.
+function legalPlay(hand, trick, seat) {
+  if (!trick.length) return { cards: hand.slice(), open: null }; // R-512: never locked, as there is no doubling
+  const led = suitOf(trick[0].card);
+  const follow = hand.filter((c) => suitOf(c) === led);
+  if (G.contract === 'SUN') return { cards: follow.length ? follow : hand.slice(), open: null }; // R-501, R-502
+  const best = trickWinner(trick);
+  const partnerWins = team(best.seat) === team(seat);
+  const trumps = hand.filter(isTrump);
+  const higher = (cards) => cards.filter((c) => power(c, led) > power(best.card, led));
+  if (led === G.trump) {
+    if (!follow.length) return { cards: hand.slice(), open: null };        // R-504: no trump, any card
+    if (partnerWins) return { cards: follow, open: null };                 // R-505
+    const up = higher(follow);
+    return { cards: up.length ? up : follow, open: null };                 // R-504
+  }
+  if (follow.length) return { cards: follow, open: null };                 // R-501
+  if (partnerWins) {
+    if (trick.length === 3) return { cards: hand.slice(), open: null };    // R-510
+    return { cards: hand.slice(), open: trumps.length ? 'R-509' : null };  // R-509 is unsettled
+  }
+  if (isTrump(best.card)) {
+    const up = higher(trumps);
+    return { cards: up.length ? up : hand.slice(), open: null };           // R-507, else any card
+  }
+  return { cards: hand.slice(), open: trumps.length ? 'R-506' : null };    // R-506 is unsettled
+}
+function illegalReason(card) {
+  const led = suitOf(G.trick[0].card);
+  if (G.hands[0].some((c) => suitOf(c) === led) && suitOf(card) !== led) return `معك ${SUIT_AR[led]} ولازم تتبعه`;
+  if (led === G.trump) return 'لازم تكبّر بالحكم إذا تقدر';
+  return 'لازم تكبّر على حكم الخصم';
+}
+
+/* ---------- Projects and Baloot ---------- */
+const projValue = (p, contract) => PROJ[p.type][contract === 'SUN' ? 's' : 'h'];
+function runsOf(hand) { // maximal runs of 3+ in R-403 order
+  const out = [];
+  for (const s of SUITS) {
+    const idx = hand.filter((c) => suitOf(c) === s).map((c) => SEQ_ORDER.indexOf(rankOf(c))).sort((a, b) => a - b);
+    let start = 0;
+    for (let i = 1; i <= idx.length; i++) {
+      if (i === idx.length || idx[i] !== idx[i - 1] + 1) {
+        if (i - start >= 3) out.push({ s, from: idx[start], len: i - start });
+        start = i;
+      }
+    }
+  }
+  return out;
+}
+function detectProjects(hand, contract) {
+  const runs = runsOf(hand);
+  if (runs.some((r) => r.len >= 6)) return { list: [], open: 'R-804' };
+  const cands = [];
+  for (const r of runs) {
+    for (let a = r.from; a < r.from + r.len; a++) {
+      for (const [len, type] of [[3, 'SIRA'], [4, 'FIFTY'], [5, 'HUNDRED_SEQ']]) {
+        if (a + len <= r.from + r.len) cands.push({ type, top: SEQ_ORDER[a], cards: Array.from({ length: len }, (_, k) => r.s + SEQ_ORDER[a + k]) });
+      }
+    }
+  }
+  for (const rk of ['A', 'K', 'Q', 'J', '10']) { // R-802
+    const cards = SUITS.map((s) => s + rk);
+    if (cards.every((c) => hand.includes(c))) cands.push({ type: rk === 'A' && contract === 'SUN' ? 'FOUR_HUNDRED' : 'HUNDRED_KIND', top: rk, cards });
+  }
+  const value = (p) => projValue(p, contract);
+  let best = [], bestV = 0;
+  for (let i = 0; i < cands.length; i++) {
+    if (value(cands[i]) > bestV) { best = [cands[i]]; bestV = value(cands[i]); }
+    for (let j = i + 1; j < cands.length; j++) {
+      if (cands[i].cards.some((c) => cands[j].cards.includes(c))) continue; // R-803: no shared card
+      const v = value(cands[i]) + value(cands[j]);
+      if (v > bestV) { best = [cands[i], cands[j]]; bestV = v; }
+    }
+  }
+  return { list: best, open: null };
+}
+const cmpProject = (a, b) => PROJ[b.type].rank - PROJ[a.type].rank || SEQ_ORDER.indexOf(a.top) - SEQ_ORDER.indexOf(b.top); // R-806, R-808
+function projectWinner(declared) { // R-805: only the team with the single best project scores
+  const [a, b] = declared.map((list) => (list.length ? list.slice().sort(cmpProject)[0] : null));
+  if (!a && !b) return { team: null };
+  if (!a || !b) return { team: a ? 0 : 1 };
+  if (PROJ[a.type].rank === 3 && PROJ[b.type].rank === 3 && a.type !== b.type) return { team: null, open: 'R-807' };
+  const d = cmpProject(a, b);
+  return d === 0 ? { team: null, open: 'R-809' } : { team: d < 0 ? 0 : 1 };
+}
+const projText = (p) => `${PROJ[p.type].ar} ${p.type === 'HUNDRED_KIND' || p.type === 'FOUR_HUNDRED' ? `(أربع ${p.top})` : SUIT_AR[suitOf(p.cards[0])]}`;
+function declareProjects(seat) { // R-811: first trick, own turn, before playing
+  const found = G.cand[seat];
+  if (found.open) { G.notes.add(found.open); return; }
+  if (!found.list.length || G.declaredBy[seat].length) return;
+  G.declaredBy[seat] = found.list;
+  G.declared[team(seat)].push(...found.list);
+  G.say[seat] = found.list.map((p) => PROJ[p.type].ar).join(' و');
+  const b = G.baloot;
+  if (b && b.seat === seat) {
+    const k = G.trump + 'K', q = G.trump + 'Q', both = (p) => p.cards.includes(k) && p.cards.includes(q);
+    if (found.list.some((p) => p.type === 'HUNDRED_KIND' && (p.top === 'K' || p.top === 'Q'))) b.blocked = true; // R-819
+    else if (found.list.some((p) => p.type === 'HUNDRED_SEQ' && both(p))) b.open = 'R-818';
+    else if (found.list.some((p) => (p.type === 'SIRA' || p.type === 'FIFTY') && both(p))) b.auto = true;   // R-818
+  }
+  if (seat !== 0) toast(`${NAMES[seat]}: ${G.say[seat]}`);
+}
+
+/* ---------- Scoring (undoubled) ---------- */
+function conv(contract, x) { // R-702, R-703
+  const u = x % 10;
+  return contract === 'HOKUM' ? Math.floor(x / 10) + (u >= 6 ? 1 : 0) : Math.floor(x / 10) * 2 + (u <= 4 ? 0 : u === 5 ? 1 : 2);
+}
+function scoreHand() {
+  const H = G.contract === 'HOKUM', total = H ? 16 : 26;
+  const bt = team(G.buyer), ot = 1 - bt;
+  const notes = [...G.notes];
+  const pw = projectWinner(G.declared);
+  if (pw.open) notes.push(pw.open);
+  const sum = (list) => list.reduce((n, p) => n + projValue(p, G.contract), 0);
+  const proj = [0, 0], bal = [0, 0];
+  if (pw.team !== null) proj[pw.team] = sum(G.declared[pw.team]);
+  const b = G.baloot;
+  if (b) {
+    if (b.open) notes.push(b.open);
+    else if (!b.blocked && (b.announced || b.auto)) bal[team(b.seat)] = 2; // R-816, R-817
+  }
+  const res = { notes, proj, bal, abnat: G.abnat.slice(), tricks: G.tricks.slice(), kaboot: null, game: [0, 0], outcome: '' };
+  const sweep = G.tricks[0] === 8 ? 0 : G.tricks[1] === 8 ? 1 : null;
+  if (sweep !== null) {
+    const reverse = !H && sweep === ot && G.buyer === nextSeat(G.dealer) && G.dealt[G.buyer].some((c) => rankOf(c) === 'A');
+    if (reverse) { notes.push('R-715'); res.outcome = 'PENDING'; return res; }
+    res.proj = [0, 0]; res.bal = [0, 0];
+    res.proj[sweep] = sum(G.declared[sweep]); res.bal[sweep] = bal[sweep]; // R-716: the other team's additions do not score
+    res.game[sweep] = (H ? 25 : 44) + res.proj[sweep] + res.bal[sweep];  // R-713
+    res.kaboot = sweep; res.outcome = 'KABOOT';
+    return res;
+  }
+  const oppCards = G.abnat[ot], c = conv(G.contract, oppCards);       // R-701: the buyer's opponents count
+  const o = c + proj[ot] + bal[ot], m = total - c + proj[bt] + bal[bt]; // R-704
+  let failed = o > m;
+  if (o === m) {
+    const u = oppCards % 10;
+    if (!H && (u === 0 || u === 5)) { notes.push('R-707'); res.outcome = 'PENDING'; return res; }
+    failed = (H ? [2, 3, 4, 5] : [1, 2, 3, 4]).includes(u);            // R-705, R-708
+  }
+  if (failed) {
+    if (proj[bt] || bal[bt]) { notes.push('R-711'); proj[bt] = 0; bal[bt] = 0; }
+    res.game[ot] = total + proj[ot] + bal[ot];                          // R-710
+    res.outcome = 'FAILED';
+  } else {
+    res.game[bt] = m; res.game[ot] = o; res.outcome = 'MADE';           // R-709
+  }
+  return res;
+}
+
+/* ---------- Bots ---------- */
+// Bots see only their own hand, the bids and the cards already played.
+function hokumStrength(cards, t) {
+  let v = 0, n = 0;
+  for (const c of cards) {
+    const r = rankOf(c);
+    if (suitOf(c) === t) { n++; v += { J: 4, 9: 3, A: 2, 10: 1.5 }[r] || 1; }
+    else v += { A: 1.5, 10: 0.5 }[r] || 0;
+  }
+  if (!cards.includes(t + 'J') && !cards.includes(t + '9')) v -= 2;
+  return n >= 3 ? v : v - 3;
+}
+function sunStrength(cards) {
+  let v = 0;
+  for (const c of cards) {
+    const r = rankOf(c);
+    if (r === 'A') v += 3;
+    else if (r === '10') v += cards.includes(suitOf(c) + 'A') ? 2 : 1;
+    else if (r === 'K') v += 0.5;
+  }
+  return v;
+}
+function botBid(seat) {
+  const cards = G.hands[seat].concat(G.faceUp), fs = suitOf(G.faceUp);
+  const sun = sunStrength(cards);
+  if (G.bidStage === 'r1') return sun >= 8.5 ? 'SUN' : hokumStrength(cards, fs) >= 6.5 ? 'HOKUM:' + fs : 'PASS';
+  if (G.bidStage === 'r1sun') return sun >= 9.5 ? 'SUN' : 'PASS';
+  if (sun >= 8) return 'SUN';
+  let best = null, bestV = 0;
+  for (const s of SUITS) if (s !== fs) { const v = hokumStrength(cards, s); if (v > bestV) { best = s; bestV = v; } }
+  return bestV >= 6 ? 'HOKUM:' + best : 'PASS';
+}
+function outside(seat) { // cards neither played nor in this seat's hand
+  const own = new Set(G.hands[seat]), gone = new Set(G.played);
+  return SUITS.flatMap((s) => SUN_ORDER.map((r) => s + r)).filter((c) => !own.has(c) && !gone.has(c));
+}
+const isMaster = (card, seat) => outside(seat).every((c) => suitOf(c) !== suitOf(card) || order(c) > order(card));
+const opponents = (seat) => [nextSeat(seat), (seat + 3) % 4];
+const mayBeTrumped = (s, seat) => G.contract === 'HOKUM' && s !== G.trump && outside(seat).some(isTrump)
+  && opponents(seat).some((o) => G.voids[o][s]);
+function winsForSure(card, seat, trick) { // no opponent still to play can beat this card
+  const led = suitOf(trick.length ? trick[0].card : card);
+  const later = Array.from({ length: 3 - trick.length }, (_, k) => (seat + k + 1) % 4).filter((s) => team(s) !== team(seat));
+  if (!later.length) return true;
+  const out = outside(seat);
+  if (out.some((c) => suitOf(c) === suitOf(card) && power(c, led) > power(card, led))) return false;
+  return !(G.contract === 'HOKUM' && !isTrump(card) && out.some(isTrump) && later.some((s) => G.voids[s][led]));
+}
+function botChoice(seat) {
+  const hand = G.hands[seat], trick = G.trick, H = G.contract === 'HOKUM';
+  const legal = legalPlay(hand, trick, seat).cards;
+  if (legal.length === 1) return legal[0];
+  const mine = team(seat);
+  const sweeping = G.history.length >= 1 && G.tricks[1 - mine] === 0; // we may still make Kaboot (تكويش)
+  const swept = G.history.length >= 4 && G.tricks[mine] === 0;        // stop the opponents' Kaboot
+  const low = (arr) => arr.slice().sort((a, b) => cardPts(a) - cardPts(b) || isTrump(a) - isTrump(b) || order(b) - order(a))[0];
+  if (!trick.length) {
+    const masters = legal.filter((c) => isMaster(c, seat));
+    // Our side bought Hokum and holds the top trump: draw the opponents' trumps first.
+    const topTrump = masters.filter(isTrump).sort((a, b) => order(a) - order(b))[0];
+    if (H && topTrump && team(G.buyer) === mine && outside(seat).some(isTrump)) return topTrump;
+    const safe = masters.filter((c) => !isTrump(c) && !mayBeTrumped(suitOf(c), seat));
+    if (safe.length) return safe.sort((a, b) => cardPts(b) - cardPts(a))[0];
+    if (sweeping && masters.length) return masters[0];
+    const side = legal.filter((c) => !isTrump(c)), pool = side.length ? side : legal;
+    const count = (s) => pool.filter((c) => suitOf(c) === s).length;
+    const longest = pool.slice().sort((a, b) => count(suitOf(b)) - count(suitOf(a)))[0];
+    return low(pool.filter((c) => suitOf(c) === suitOf(longest)));
+  }
+  const led = suitOf(trick[0].card), best = trickWinner(trick), last = trick.length === 3, pts = trickPoints(trick);
+  const beat = legal.filter((c) => power(c, led) > power(best.card, led));
+  const rest = legal.filter((c) => !beat.includes(c));
+  if (team(best.seat) === mine) {
+    if (last || winsForSure(best.card, seat, trick)) { // judged from this bot's own view only
+      // Partner has it: feed points without spending a card that wins later.
+      const give = legal.filter((c) => !isTrump(c) && !isMaster(c, seat));
+      if (give.length) return give.sort((a, b) => cardPts(b) - cardPts(a))[0];
+    }
+    return low(legal);
+  }
+  if (!beat.length) return low(legal);
+  const byPower = beat.slice().sort((a, b) => power(a, led) - power(b, led));
+  const cheapest = byPower[0], strongest = byPower[byPower.length - 1];
+  if (last) return cheapest;
+  if (H && led !== G.trump && beat.every(isTrump)) { // trumping in: worth it for points, Kaboot, or late in the hand
+    return (pts >= 4 || sweeping || swept || G.history.length >= 5 || !rest.length) ? cheapest : low(rest);
+  }
+  const sure = byPower.filter((c) => winsForSure(c, seat, trick));
+  if (sure.length) return sure[0];
+  if (pts >= 10 || sweeping || swept || trick.length === 2) return strongest;
+  return rest.length ? low(rest) : cheapest;
+}
+
+/* ---------- Match and hand ---------- */
+let G = null, M = null, runId = 0;
+const motion = () => !matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = (ms) => new Promise((r) => setTimeout(r, motion() ? ms : Math.min(ms, 120)));
+const dealOrder = (dealer) => [1, 2, 3, 4].map((k) => (dealer + k) % 4);
+
+function newMatch() { M = { score: [0, 0], dealer: secureInt(4), hands: 0, over: false, winner: null, open: null }; }
+
+async function newRound() {
+  clearVoice();
+  if (!M || M.over) newMatch();
+  const id = ++runId;
+  const deck = shuffledDeck();
+  const salt = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  const payload = deck.join(',') + '|' + salt;
+  const commit = await sha256(payload);
+  if (id !== runId) return;
+  const dealer = M.dealer, order_ = dealOrder(dealer);
+  const hands = [[], [], [], []];
+  let p = 0;
+  for (const size of [3, 2]) for (const s of order_) { hands[s].push(...deck.slice(p, p + size)); p += size; } // R-102, R-103
+  G = {
+    deck, salt, payload, commit, dealer, order: order_, hands, faceUp: deck[p], next: p + 1,
+    phase: 'bid', bidStage: 'r1', queue: order_, qi: 0, pendingHokum: null, turn: order_[0],
+    contract: null, trump: null, buyer: null, dealt: null, cand: null, say: ['', '', '', ''],
+    trick: [], history: [], abnat: [0, 0], tricks: [0, 0], played: [], voids: [{}, {}, {}, {}],
+    declared: [[], []], declaredBy: [[], [], [], []], baloot: null, balootCall: false, wantDeclare: false,
+    notes: new Set(), done: false, verified: null, justDealt: true, result: null,
+  };
+  G.say[dealer] = 'أول';
+  closeOverlay();
+  if (state.screen === 'table') { render(); loop(id); }
+}
+
+const bidText = (bid) => bid === 'PASS' ? (G.bidStage === 'r2' ? 'ولا' : 'بس') : bid === 'SUN' ? 'صن' : 'حكم ' + SUIT_AR[bid.slice(6)];
+function bidOptions() {
+  const fs = suitOf(G.faceUp);
+  if (G.bidStage === 'r1') return ['PASS', 'HOKUM:' + fs, 'SUN'];           // R-202 (no Ashkal: R-207 to R-209)
+  if (G.bidStage === 'r1sun') return ['PASS', 'SUN'];                         // R-203
+  return ['PASS', 'SUN', ...SUITS.filter((s) => s !== fs).map((s) => 'HOKUM:' + s)]; // R-211
+}
+function applyBid(seat, bid, id) {
+  if (!G || G.phase !== 'bid' || G.turn !== seat || !bidOptions().includes(bid)) return;
+  G.say[seat] = bidText(bid);
+  if (bid === 'SUN') return endBidding('SUN', seat, null, id);                 // a Sun ends the bidding (R-204 is unsettled)
+  if (bid.startsWith('HOKUM')) {
+    if (G.bidStage === 'r2') return endBidding('HOKUM', seat, bid.slice(6), id); // R-212 is unsettled: no Sun after it
+    G.pendingHokum = { seat, trump: bid.slice(6) };
+    G.bidStage = 'r1sun'; G.queue = [1, 2, 3].map((k) => (seat + k) % 4); G.qi = 0; G.turn = G.queue[0];
+    return renderBid();
+  }
+  if (++G.qi < G.queue.length) { G.turn = G.queue[G.qi]; return renderBid(); }
+  if (G.bidStage === 'r1sun') return endBidding('HOKUM', G.pendingHokum.seat, G.pendingHokum.trump, id);
+  if (G.bidStage === 'r1') {
+    G.bidStage = 'r2'; G.queue = G.order; G.qi = 0; G.turn = G.queue[0];
+    G.say = ['', '', '', '']; G.say[G.dealer] = 'ثاني';
+    return renderBid();
+  }
+  // R-214: everyone passed twice. The hand is thrown in and the deal passes to the right.
+  G.turn = -1; G.phase = 'thrown';
+  M.dealer = nextSeat(M.dealer);
+  renderBid();
+  toast('مرّر الجميع دورين: تُلغى اليد ونعيد التوزيع');
+  wait(1600).then(() => { if (id === runId && state.screen === 'table') newRound(); });
+}
+function endBidding(contract, buyer, trump, id) {
+  Object.assign(G, { contract, buyer, trump, phase: 'play' });
+  for (const s of G.order) { // R-104: the buyer takes the face-up card and 2 more, everyone else 3
+    const n = s === buyer ? 2 : 3;
+    if (s === buyer) G.hands[s].push(G.faceUp);
+    G.hands[s].push(...G.deck.slice(G.next, G.next + n));
+    G.next += n;
+  }
+  G.dealt = G.hands.map((h) => h.slice());
+  G.cand = G.hands.map((h) => detectProjects(h, contract));
+  if (contract === 'HOKUM') {
+    const holder = G.hands.findIndex((h) => h.includes(trump + 'K') && h.includes(trump + 'Q'));
+    if (holder >= 0) G.baloot = { seat: holder, played: 0, announced: false, auto: false, blocked: false, open: null };
+  }
+  G.say = ['', '', '', '']; G.say[buyer] = contract === 'SUN' ? 'صن' : 'حكم ' + SUIT_AR[trump];
+  G.turn = G.order[0]; G.justDealt = true;
+  render();
+  if (state.screen === 'table') loop(id);
+}
+
+async function loop(id) {
+  while (G && id === runId && !G.done && G.turn > 0 && state.screen === 'table') {
+    await wait(G.phase === 'bid' ? 760 : 620);
+    while (voiceSession && id === runId && state.screen === 'table') await wait(100);
+    if (id !== runId || state.screen !== 'table' || G.done || G.turn <= 0) return;
+    const seat = G.turn;
+    if (G.phase === 'bid') applyBid(seat, botBid(seat), id);
+    else if (G.phase === 'play') await playCard(seat, botChoice(seat), id);
+    else return;
+  }
+}
+
+async function playCard(seat, card, id) {
+  if (G.history.length === 0 && (seat !== 0 || G.wantDeclare)) declareProjects(seat);
+  if (G.history.length === 1 && G.trick.length === 0) G.say = ['', '', '', ''];
+  if (G.history.length === 1 && G.declaredBy[seat].length) { // R-812: shown in the second trick
+    G.say[seat] = 'يعرض ' + G.declaredBy[seat].map(projText).join(' و');
+  }
+  const b = G.baloot;
+  if (b && b.seat === seat && suitOf(card) === G.trump && (rankOf(card) === 'K' || rankOf(card) === 'Q')) {
+    b.played++;
+    if (b.played === 2 && (seat !== 0 || G.balootCall)) { // R-817: said with the second card
+      b.announced = true; G.say[seat] = 'بلوت';
+      if (!b.blocked && !b.open) { chime(); burst(frame.offsetWidth / 2, frame.offsetHeight * 0.44, 40, ['#eeb077', '#d08a4e', '#f6efdf']); }
+    }
+  }
+  const led = G.trick.length ? suitOf(G.trick[0].card) : null;
+  if (led && suitOf(card) !== led) G.voids[seat][led] = true;
+  G.hands[seat].splice(G.hands[seat].indexOf(card), 1);
+  G.trick.push({ seat, card });
+  G.played.push(card);
+  tick();
+  renderPile(true);
+  renderPlayers();
+  if (seat === 0) renderHand();
+  if (G.trick.length < 4) {
+    G.turn = nextSeat(seat);
+    renderPlayers(); renderStatus(); renderHand(); renderActs();
+    return;
+  }
+  G.turn = -1; renderPlayers(); renderStatus(); renderHand(); renderActs();
+  await wait(820);
+  if (id !== runId) return;
+  const w = trickWinner(G.trick);
+  collect(w.seat);
+  const pts = trickPoints(G.trick);
+  const last = settleTrick();
+  renderScore();
+  if (team(w.seat) === 0 && pts >= 20) burst(frame.offsetWidth / 2, frame.offsetHeight * 0.44, 22, ['#eeb077', '#f6efdf']);
+  await wait(300);
+  if (id !== runId) return;
+  renderPile(false);
+  if (last) { await finish(); return; }
+  renderPlayers(); renderStatus(); renderHand(); renderActs();
+}
+function settleTrick() { // true when the hand is over
+  const w = trickWinner(G.trick), last = G.hands.every((h) => !h.length);
+  const pts = trickPoints(G.trick) + (last ? 10 : 0); // R-406
+  G.abnat[team(w.seat)] += pts;
+  G.tricks[team(w.seat)]++;
+  G.history.push({ cards: G.trick.slice(), winner: w.seat, pts });
+  G.trick = [];
+  G.turn = w.seat;
+  return last;
+}
+async function finish() {
+  if (G.done) return;
+  G.done = true; G.phase = 'done';
+  clearVoice();
+  G.verified = (await sha256(G.deck.join(',') + '|' + G.salt)) === G.commit;
+  const res = G.result = scoreHand();
+  M.score[0] += res.game[0]; M.score[1] += res.game[1];
+  M.hands++;
+  M.dealer = nextSeat(M.dealer); // R-005
+  const [a, b] = M.score;
+  if (Math.max(a, b) >= 152) {   // R-901, R-902
+    M.over = true;
+    if (a === b) { M.open = 'R-903'; M.winner = null; } else M.winner = a > b ? 0 : 1;
+    recordMatch();
+  }
+  if (res.kaboot === 0) bumpStat('kaboots');
+  renderPlayers(); renderStatus(); renderScore(); renderActs(); showResult();
+  const W = frame.offsetWidth, Hh = frame.offsetHeight;
+  if ((M.over && M.winner === 0) || res.kaboot === 0) { burst(W / 2, Hh * 0.3, 140, ['#eeb077', '#d08a4e', '#f6efdf', '#1a7a68', '#c2262e'], 1.4); chime(); }
+  else if (res.game[0] > res.game[1]) burst(W / 2, Hh * 0.35, 60, ['#eeb077', '#f6efdf', '#1a7a68']);
+}
+
+/* ---------- Scores kept on this device only ---------- */
+const STATS_KEY = 'sakka-stats';
+function loadStats() {
+  const blank = { played: 0, won: 0, kaboots: 0, recent: [] };
+  try { return { ...blank, ...JSON.parse(localStorage.getItem(STATS_KEY) || '{}') }; } catch { return blank; }
+}
+function saveStats(s) { try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch {} }
+function bumpStat(key) { const s = loadStats(); s[key]++; saveStats(s); }
+function recordMatch() {
+  const s = loadStats();
+  s.played++;
+  if (M.winner === 0) s.won++;
+  s.recent = [{ at: new Date().toISOString().slice(0, 10), us: M.score[0], them: M.score[1], won: M.winner === 0 }, ...s.recent].slice(0, 5);
+  saveStats(s);
+}
+
+/* ---------- Celebration effects ---------- */
+function chime() {
+  if (state.sound !== 'on') return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    [660, 880].forEach((f, i) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime + i * 0.12;
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.2, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + 0.4);
+    });
+  } catch {}
+}
+const FX = { parts: [], raf: 0 };
+function burst(x, y, n, colors, spread = 1) {
+  if (!motion() || state.screen !== 'table') return;
+  let cv = $('#fx');
+  if (!cv) { cv = document.createElement('canvas'); cv.id = 'fx'; cv.setAttribute('aria-hidden', 'true'); frame.append(cv); }
+  const W = frame.offsetWidth, H = frame.offsetHeight;
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, v = (2 + Math.random() * 5) * spread;
+    FX.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 3 * spread, life: 60 + Math.random() * 45, age: 0,
+      size: 4 + Math.random() * 5, color: colors[i % colors.length], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3 });
+  }
+  if (!FX.raf) FX.raf = requestAnimationFrame(stepFx);
+}
+function stepFx() {
+  const cv = $('#fx');
+  if (!cv) { FX.parts = []; FX.raf = 0; return; }
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  FX.parts = FX.parts.filter((p) => p.age < p.life);
+  for (const p of FX.parts) {
+    p.age++; p.vy += 0.18; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+    ctx.globalAlpha = 1 - p.age / p.life;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.color;
+    ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2); ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+  FX.raf = FX.parts.length ? requestAnimationFrame(stepFx) : 0;
+}
+
+/* ---------- Talk to the bots ---------- */
+const VoiceRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const voiceSynth = window.speechSynthesis;
+let voiceSession = null;
+let voiceCaption = '';
+let voiceDetail = '';
+let voiceCaptionTimer;
+let speaking = null;
+
+function paintVoice() {
+  const mic = $('#voiceMic');
+  const caption = $('#voiceCaption');
+  if (!mic || !caption) return;
+  mic.setAttribute('aria-pressed', String(Boolean(voiceSession)));
+  $('#voiceLabel').textContent = voiceSession ? 'إيقاف' : 'كلّم البوت';
+  caption.hidden = !voiceCaption;
+  $('#voiceCaptionLine').textContent = voiceCaption;
+  $('#voiceCaptionDetail').textContent = voiceDetail;
+}
+
+function showVoice(text, detail = '') {
+  clearTimeout(voiceCaptionTimer);
+  voiceCaption = text;
+  voiceDetail = detail;
+  paintVoice();
+  if (text && !voiceSession) voiceCaptionTimer = setTimeout(() => showVoice(''), 7000);
+}
+
+function clearVoice() {
+  const active = voiceSession;
+  voiceSession = null;
+  if (active) {
+    clearTimeout(active.timer);
+    try { active.recognition.abort(); } catch {}
+  }
+  if (speaking) voiceSynth.cancel();
+  speaking = null;
+  showVoice('');
+}
+
+function sayVoice(text, heard = '') {
+  showVoice(text, heard ? `سمعتك تقول: «${heard.slice(0, 95)}»` : '');
+  if (!voiceSynth || !window.SpeechSynthesisUtterance) return;
+  const voices = voiceSynth.getVoices();
+  const arabic = voices.find((voice) => /^ar[-_]SA$/i.test(voice.lang))
+    || voices.find((voice) => /^ar(?:[-_]|$)/i.test(voice.lang));
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = arabic?.lang || 'ar-SA';
+  if (arabic) utterance.voice = arabic;
+  utterance.rate = 0.96;
+  if (speaking) voiceSynth.cancel();
+  speaking = utterance;
+  utterance.onend = () => { if (speaking === utterance) speaking = null; };
+  utterance.onerror = () => {
+    if (speaking !== utterance) return;
+    speaking = null;
+    showVoice(text, 'الصوت العربي غير متاح في هذا المتصفح.');
+  };
+  voiceSynth.speak(utterance);
+}
+
+function voiceCommand(transcript) {
+  const words = transcript.toLowerCase().replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  const has = (pattern) => pattern.test(words);
+  const bot = has(/(?:^| )ابو فهد(?: |$)/) ? 1 : has(/(?:^| )ماجد(?: |$)/) ? 2 : has(/(?:^| )تركي(?: |$)/) ? 3 : null;
+  if (has(/كم (?:لنا|علينا|لهم|النتيجه|النتيجة)|(?:^| )(?:النتيجة|النتيجه|السكور)(?: |$)/)) return { kind: 'score' };
+  if (has(/دور مين|دور من|مين عليه الدور|مين دوره|من دوره|مين يلعب|جاء دوري|(?:^| )دوري(?: |$)/)) return { kind: 'turn' };
+  if (has(/(?:^| )(?:بلوت|بلت)(?: |$)/)) return { kind: 'declare' };
+  if (has(/(?:^| )(?:العب عني|العب لي)(?: |$)/)) return { kind: 'assist' };
+  if (has(/(?:^| )(?:العب|العب دورك|جاوب|رد)(?: |$)/)) return { kind: 'bot', bot };
+  if (has(/(?:^| )(?:هلا|سلام|السلام عليكم|مرحبا)(?: |$)/)) return { kind: 'greeting' };
+  if (has(/(?:^| )(?:ممتاز|كفو|يعطيك العافيه|يعطيك العافية)(?: |$)/)) return { kind: 'cheer' };
+  return { kind: 'unknown' };
+}
+
+function answerVoice(heard) {
+  const command = voiceCommand(heard);
+  if (!G || !M) { sayVoice('ثواني، نوزع الورق.', heard); return; }
+  const current = G.turn;
+  switch (command.kind) {
+    case 'score':
+      sayVoice(`الصكة: لنا ${M.score[0]} ولهم ${M.score[1]}. وهاليد: لنا ${G.abnat[0]} بنط ولهم ${G.abnat[1]} بنط.`, heard);
+      break;
+    case 'turn':
+      if (G.done) sayVoice('خلصت اليد.', heard);
+      else if (G.phase === 'bid') sayVoice(current === 0 ? 'دورك في الشراء: بس أو صن أو حكم.' : `يتكلم الحين ${NAMES[current]}.`, heard);
+      else sayVoice(current === 0 ? 'إيه، دورك. اختر ورقة.' : current === -1 ? 'لحظة، نحسب الأكلة.' : `الحين دور ${NAMES[current]}.`, heard);
+      break;
+    case 'declare': {
+      const b = G.baloot;
+      if (G.contract !== 'HOKUM') sayVoice('البلوت يكون في الحكم بس.', heard);
+      else if (!b || b.seat !== 0 || G.done) sayVoice('ما معك بلوت في هاليد.', heard);
+      else if (b.played >= 2) sayVoice('فات وقت البلوت، يُعلن مع الورقة الثانية.', heard);
+      else { G.balootCall = true; renderActs(); sayVoice('تمام، نعلن البلوت مع ورقتك الثانية من الشايب والبنت.', heard); }
+      break;
+    }
+    case 'assist': {
+      if (G.done || current !== 0) { sayVoice('أقدر ألعب عنك إذا جاء دورك.', heard); break; }
+      const id = runId;
+      if (G.phase === 'bid') {
+        const bid = botBid(0);
+        sayVoice(`أبشر، أقول عنك: ${bidText(bid)}.`, heard);
+        applyBid(0, bid, id); loop(id);
+        break;
+      }
+      const card = botChoice(0);
+      if (!card || !legalPlay(G.hands[0], G.trick, 0).cards.includes(card)) { sayVoice('اختر ورقة من يدك.', heard); break; }
+      sayVoice('أبشر، ألعب عنك هالورقة.', heard);
+      playCard(0, card, id).then(() => loop(id));
+      break;
+    }
+    case 'bot':
+      if (G.done) sayVoice('خلصت اليد. نكمل؟', heard);
+      else if (current === 0) sayVoice('دورك أنت يا طويل العمر. إذا تبي مساعدة قل: العب عنّي.', heard);
+      else if (current === -1) sayVoice('لحظة، نحسب الأكلة.', heard);
+      else if (command.bot && command.bot !== current) sayVoice(`خلّنا ننتظر ${NAMES[current]}، دوره الحين.`, heard);
+      else sayVoice('أبشر، دوري الحين.', heard);
+      break;
+    case 'greeting': sayVoice('يا هلا والله. حيّاك على الطاولة!', heard); break;
+    case 'cheer': sayVoice('كفوك الطيب! يلا نكمل.', heard); break;
+    default: sayVoice('ما فهمت عليك. جرّب: كم لنا؟ أو دور مين؟', heard);
+  }
+}
+
+function toggleVoice() {
+  if (voiceSession) { clearVoice(); return; }
+  if (!VoiceRecognition) {
+    showVoice('المايك غير مدعوم داخل هذا المتصفح، مثل متصفح واتساب. افتح الرابط في Safari أو Chrome، أو كمّل باللمس.');
+    return;
+  }
+  if (!G || G.done) { showVoice('ابدأ صكّة عشان تكلّم البوت.'); return; }
+  if (speaking) { voiceSynth.cancel(); speaking = null; }
+  const recognition = new VoiceRecognition();
+  const active = { recognition, id: runId, heard: '', error: '' };
+  voiceSession = active;
+  recognition.lang = 'ar-SA';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onstart = () => {
+    if (voiceSession === active) showVoice('أسمعك…', 'جرّب: «كم لنا؟» أو «دور مين؟»');
+  };
+  recognition.onresult = (event) => {
+    if (voiceSession === active) active.heard = event.results[event.resultIndex]?.[0]?.transcript || '';
+  };
+  recognition.onerror = (event) => {
+    if (voiceSession !== active) return;
+    active.error = ({
+      'not-allowed': 'اسمح للمتصفح باستخدام المايك ثم جرّب من جديد.',
+      'service-not-allowed': 'خدمة التعرّف على الصوت غير متاحة. في iPhone فعّل «الإملاء» من الإعدادات > عام > لوحة المفاتيح، أو جرّب Chrome.',
+      'audio-capture': 'ما قدرنا نوصل للمايك. تحقق من إعدادات الجهاز.',
+      'network': 'تعذّر الاتصال بخدمة التعرّف على الصوت. جرّب مرة ثانية.',
+      'no-speech': 'ما سمعتك. اضغط المايك وجرّب مرة ثانية.',
+      'language-not-supported': 'المتصفح ما يدعم التعرّف بالعربية هنا.',
+    })[event.error] || 'ما اشتغل المايك. تقدر تكمل باللمس.';
+  };
+  recognition.onend = () => {
+    if (voiceSession !== active) return;
+    clearTimeout(active.timer);
+    voiceSession = null;
+    if (runId !== active.id || state.screen !== 'table') { showVoice(''); return; }
+    if (active.error) showVoice(active.error);
+    else if (active.heard) answerVoice(active.heard);
+    else showVoice('ما سمعتك. اضغط المايك وجرّب مرة ثانية.');
+  };
+  showVoice('نفتح المايك…');
+  active.timer = setTimeout(() => {
+    if (voiceSession !== active) return;
+    clearVoice();
+    showVoice('انتهت مهلة الاستماع. اضغط المايك وجرّب مرة ثانية.');
+  }, 10000);
+  try { recognition.start(); } catch {
+    clearVoice();
+    showVoice('تعذّر تشغيل المايك. افتح الرابط في Safari أو Chrome، أو كمّل باللمس.');
+  }
+}
+
+function showVoiceHelp() {
+  clearVoice();
+  overlay(`<h2>سوالف الطاولة</h2>
+    <p>اضغط «كلّم البوت»، اسمح باستخدام المايك، وقل جملة واحدة. جرّب هالجمل هنا، أو اضغط زرًا لسماع الرد.</p>
+    <div class="voice-examples">
+      <button type="button" data-voice-example="كم لنا؟">كم لنا؟</button>
+      <button type="button" data-voice-example="دور مين؟">دور مين؟</button>
+      <button type="button" data-voice-example="يا ماجد، العب">يا ماجد، العب</button>
+    </div>
+    <p>«العب عنّي» يلعب ورقة قانونية من يدك في دورك. خدمة التعرّف على الصوت يوفّرها متصفحك وقد تتطلب الإنترنت. اللعبة لا تحفظ التسجيلات.</p>
+    <button type="button" class="ghost" data-close>رجوع للطاولة</button>`);
+}
+
+/* ---------- Feedback ---------- */
+let audioCtx = null;
+function tick() {
+  if (state.sound !== 'on') return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const n = audioCtx.createBufferSource(), len = audioCtx.sampleRate * .05;
+    const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) ** 3;
+    const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1900;
+    const g = audioCtx.createGain(); g.gain.value = .28;
+    n.buffer = buf; n.connect(f); f.connect(g); g.connect(audioCtx.destination); n.start();
+  } catch {}
+}
+let toastTimer;
+function toast(msg) {
+  let el = $('#toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.setAttribute('role', 'status'); frame.append(el); }
+  el.innerHTML = msg; el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 2100);
+}
+async function copyText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); toast(okMsg); }
+  catch { toast('تعذر النسخ من هذا المتصفح'); }
+}
+
+function shareableGameUrl(href) {
+  const url = new URL(href);
+  const host = url.hostname;
+  // A file or a development server is only reachable on this device.
+  const local = !host.includes('.') || /(?:^|\.)(?:localhost|local)$/.test(host)
+    || /^(?:127\.|10\.|192\.168\.|169\.254\.|172\.(?:1[6-9]|2\d|3[01])\.)/.test(host);
+  if (url.protocol !== 'https:' || local) return null;
+  url.username = '';
+  url.password = '';
+  url.search = '';
+  url.hash = 'table';
+  return url.href;
+}
+
+const gameShareUrl = shareableGameUrl(location.href);
+
+async function shareGame() {
+  if (gameShareUrl) {
+    const payload = {
+      title: 'صكّة بالصوت',
+      text: 'جرّب طاولة صكّة مع ثلاثة بوتات.',
+      url: gameShareUrl,
+    };
+    if (navigator.share) {
+      try { await navigator.share(payload); return; }
+      catch (error) { if (error.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(gameShareUrl);
+      toast('نسخنا رابط تجربة صكّة');
+    } catch {
+      overlay(`<h2>رابط تجربة صكّة</h2>
+        <p>اضغط مطوّلًا على الرابط وانسخه.</p>
+        <a class="mono" href="${esc(gameShareUrl)}">${esc(gameShareUrl)}</a>
+        <button class="ghost" type="button" data-close>رجوع</button>`);
+    }
+    return;
+  }
+
+  const file = new File([cleanGamePage], 'sakka-voice.html', { type: 'text/html' });
+  if (navigator.share && navigator.canShare?.({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; }
+    catch (error) { if (error.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(file);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = file.name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  toast('أرسل ملف صكّة المحمّل كمرفق');
+}
+
+/* ---------- Rendering ---------- */
+const suitSvg = (s) => `<svg aria-hidden="true"><use href="#s-${s}"/></svg>`;
+function cardHtml(c, size) {
+  const s = suitOf(c), r = rankOf(c);
+  const body = CREST[r] ? `<span class="crest"><span>${CREST[r]}</span></span>` : `<span class="pip">${suitSvg(s)}</span>`;
+  return `<span class="card s-${s} sz-${size}"><span class="idx">${r}${suitSvg(s)}</span>${body}</span>`;
+}
+const VECTORS = {
+  portrait: { from: [[-31, 300], [170, -47], [-31, -250], [-230, -47]], slot: [[-31, 6], [34, -47], [-31, -100], [-96, -47]] },
+  landscape: { from: [[-27, 190], [340, -39], [-27, -170], [-400, -39]], slot: [[-27, 2], [32, -39], [-27, -80], [-86, -39]] },
+};
+const ROT = [-3, 4, 2, -5];
+const contractLabel = () => !G || !G.contract ? (G && G.phase === 'bid' ? (G.bidStage === 'r2' ? 'ثاني' : 'أول') : '—')
+  : G.contract === 'SUN' ? 'صن' : 'حكم ' + { S: '♠', H: '♥', C: '♣', D: '♦' }[G.trump];
+
+function statsHtml() {
+  const s = loadStats();
+  if (!s.played) return '<p class="stats">ما خلّصت صكة كاملة بعد. نتائجك تُحفظ في هذا الجهاز فقط.</p>';
+  return `<div class="stats"><p>لعبت ${s.played} · فزت ${s.won} · كبوت ${s.kaboots}</p>
+    ${s.recent.map((r) => `<p>${esc(r.at)}: لنا ${Number(r.us)} ولهم ${Number(r.them)} ${r.won ? '✓' : ''}</p>`).join('')}</div>`;
+}
+function renderHome() {
+  const s = [['ن', 'أنت', ''], ['ف', 'أبو فهد', ''], ['م', 'ماجد (شريكك)', ''], ['ت', 'تركي', '']];
+  const live = M && !M.over;
+  return `<div class="screen home">
+    <div class="bar"><div class="logo"><i></i>صكّة</div><div class="me"><span>أنت</span><span class="face">ن</span></div></div>
+    <section class="hero" aria-label="طاولتك">${sceneHtml(state.region)}
+      <div class="inner">
+        <h2>${live ? `صكّتك مستمرة: لنا ${M.score[0]} ولهم ${M.score[1]}` : 'طاولتك مع البوتات جاهزة'}</h2>
+        <div class="ring">${s.map(([f, n, c], i) => `<div class="seat r${i}"><span class="face ${c}">${f}</span>${n}</div>`).join('')}</div>
+        <button class="cta" type="button" data-go="table">${live ? 'كمّل الصكة' : 'ادخل الطاولة'}</button>
+      </div>
+    </section>
+    <div class="row">
+      <button class="ghost" type="button" data-share-game>${gameShareUrl ? 'شارك رابط الطاولة' : 'شارك ملف اللعبة'}</button>
+      <button class="ghost" type="button" id="freshMatch">صكة جديدة من الصفر</button>
+    </div>
+    <div class="group"><span class="section-title">سجلك على هذا الجهاز</span>${statsHtml()}</div>
+    <div class="group"><span class="section-title">مجلسك</span>
+      <div class="regions">${Object.entries(REGIONS).map(([k, v]) => `<button class="region" type="button" data-set="region" data-val="${k}" aria-pressed="${state.region === k}"><span class="mini">${sceneHtml(k)}</span>${v.name}</button>`).join('')}</div>
+    </div>
+  </div>`;
+}
+let inviteSeat = null;
+function renderInvite() {
+  const s = [['م', 'ماجد', 0], ['ف', 'أبو فهد', 0], ['ت', 'تركي', 0], ['+', 'مقعدك', 1]];
+  return `<div class="screen invite">${sceneHtml(state.region)}
+    <div class="sheet">
+      <h2>حيّاك على طاولة صكّة</h2>
+      <p>مجلس ${REGIONS[state.region].name}. تلعب صكّة كاملة إلى 152 مع ثلاثة بوتات على جهازك: شراء، صن وحكم، مشاريع وبلوت وكبوت.</p>
+      <div class="seats">${s.map(([f, n, open]) => open
+        ? `<button class="seat open" type="button" id="seatPick" aria-pressed="${inviteSeat === 1}"><span class="face empty ${inviteSeat ? 'pick' : ''}">${inviteSeat ? 'ن' : '+'}</span>${n}</button>`
+        : `<div class="seat"><span class="face">${f}</span>${n}</div>`).join('')}</div>
+      <button class="cta" type="button" id="sit">${inviteSeat ? 'يلا نبدأ' : 'اجلس على الطاولة'}</button>
+    </div>
+  </div>`;
+}
+function renderTable() {
+  return `<div class="screen table" data-layout="${state.layout}">${sceneHtml(state.region)}
+    <div class="hud">
+      <div class="score" id="score"></div>
+      <div class="voice-controls">
+        <button class="voice-mic" type="button" id="voiceMic" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3m-4 0h8"/></svg>
+          <span id="voiceLabel">كلّم البوت</span>
+        </button>
+        <button class="voice-help" type="button" id="voiceHelp" aria-label="مساعدة صوت الطاولة">؟</button>
+        <button class="proof-chip" type="button" id="proofBtn" aria-label="عرض بصمة الخلط"><span>الخلط</span><b id="proofShort"></b></button>
+      </div>
+    </div>
+    ${[1, 2, 3].map((p) => `<div class="player p${p} ${team(p) ? 'foe' : 'team'}" id="pl${p}"></div>`).join('')}
+    <div class="pile" id="pile"></div>
+    <div class="status" id="status" aria-live="polite"></div>
+    <div class="acts" id="acts"></div>
+    <div class="voice-caption" id="voiceCaption" role="status" hidden><span id="voiceCaptionLine"></span><small id="voiceCaptionDetail"></small></div>
+    <div class="hand" id="hand"></div>
+  </div>`;
+}
+function renderScore() {
+  const el = $('#score'); if (!el || !G || !M) return;
+  el.innerHTML = `<div><small>لنا</small><b>${M.score[0]}</b></div><div><small>لهم</small><b>${M.score[1]}</b></div>`
+    + `<div class="modecell"><small>${G.buyer !== null ? (team(G.buyer) === 0 ? 'شرينا' : 'شروا') : 'الشراء'}</small><strong>${contractLabel()}</strong></div>`;
+}
+function renderPlayers() {
+  if (!G) return;
+  [1, 2, 3].forEach((p) => {
+    const el = $('#pl' + p); if (!el) return;
+    el.classList.toggle('turn', G.turn === p && !G.done);
+    const tag = p === G.dealer ? ' · يوزّع' : '';
+    el.innerHTML = `<span class="face">${NAMES[p][p === 1 ? 4 : 0]}</span><span>${NAMES[p]}${p === 2 ? ' (شريكك)' : ''}</span>`
+      + `<span class="count">${G.hands[p].length} ورق${tag}</span>${G.say[p] ? `<span class="bubble">${esc(G.say[p])}</span>` : ''}`;
+  });
+}
+function renderStatus() {
+  const el = $('#status'); if (!el || !G) return;
+  const mine = G.turn === 0 && !G.done;
+  el.className = 'status' + (mine ? ' mine' : '');
+  if (G.phase === 'bid') el.textContent = mine ? 'دورك في الشراء' : `يتكلم ${NAMES[G.turn]}`;
+  else if (G.phase === 'thrown') el.textContent = 'تُلغى اليد';
+  else el.textContent = G.done ? 'انتهت اليد' : mine ? 'دورك، العب ورقة' : G.turn === -1 ? 'يحسب الأكلة' : `دور ${NAMES[G.turn]}`;
+}
+function renderPile(animateLast) {
+  const pile = $('#pile'); if (!pile || !G) return;
+  if (G.phase === 'bid' || G.phase === 'thrown') {
+    pile.innerHTML = `<span class="faceup">${cardHtml(G.faceUp, 'table')}<small>المكشوفة</small></span>`;
+    return;
+  }
+  const V = VECTORS[state.layout];
+  pile.innerHTML = G.trick.map((t) => `<span class="tcard" data-seat="${t.seat}" style="transform:translate(${V.slot[t.seat][0]}px,${V.slot[t.seat][1]}px) rotate(${ROT[t.seat]}deg)">${cardHtml(t.card, 'table')}</span>`).join('');
+  if (animateLast && pile.lastElementChild) {
+    const el = pile.lastElementChild, t = G.trick[G.trick.length - 1];
+    const final = el.style.transform;
+    el.style.transition = 'none';
+    el.style.transform = `translate(${V.from[t.seat][0]}px,${V.from[t.seat][1]}px) rotate(${ROT[t.seat] * 3}deg)`;
+    el.getBoundingClientRect();
+    el.style.transition = '';
+    el.style.transform = final;
+  }
+}
+function collect(winner) {
+  const V = VECTORS[state.layout].from[winner];
+  document.querySelectorAll('#pile .tcard').forEach((el) => {
+    el.style.transform = `translate(${V[0] * .9}px,${V[1] * .9}px) scale(.5)`;
+    el.style.opacity = '0';
+  });
+}
+const SUIT_ORDER = { S: 0, H: 1, C: 2, D: 3 };
+function renderHand() {
+  const el = $('#hand'); if (!el || !G) return;
+  const key = (c) => (G.contract && isTrump(c) ? -1 : SUIT_ORDER[suitOf(c)]);
+  const hand = G.hands[0].slice().sort((a, b) => key(a) - key(b) || (G.contract ? order(a) - order(b) : SUN_ORDER.indexOf(rankOf(a)) - SUN_ORDER.indexOf(rankOf(b))));
+  const land = state.layout === 'landscape';
+  const W = land ? 844 : 390, cw = land ? 78 : 76, gut = land ? 110 : 10;
+  const avail = W - gut * 2 - cw;
+  const n = hand.length, step = n > 1 ? Math.min(land ? 66 : 62, avail / (n - 1)) : 0;
+  const total = step * (n - 1) + cw, start = (W - total) / 2;
+  const myTurn = G.phase === 'play' && G.turn === 0 && !G.done;
+  const legal = myTurn ? legalPlay(G.hands[0], G.trick, 0).cards : hand;
+  el.innerHTML = hand.map((c, i) => {
+    const mid = (n - 1) / 2, rot = (i - mid) * (land ? 1 : 1.2), drop = Math.abs(i - mid) ** 2 * (land ? .7 : 1.2);
+    const isLegal = legal.includes(c);
+    const rotS = `translateY(${drop}px) rotate(${rot}deg)`;
+    return `<button type="button" class="hcard ${myTurn && isLegal ? 'legal' : ''} ${myTurn && !isLegal ? 'dim' : ''} ${G.justDealt ? 'deal' : ''}" data-card="${c}" style="left:${start + i * step}px;z-index:${i + 1};--rot:${rotS};transform:${rotS};${G.justDealt ? `animation-delay:${i * 45}ms` : ''}" aria-label="${rankOf(c)} ${SUIT_AR[suitOf(c)]}">${cardHtml(c, 'hand')}</button>`;
+  }).join('');
+  G.justDealt = false;
+}
+function renderActs() {
+  const el = $('#acts'); if (!el || !G) return;
+  const parts = [];
+  if (G.phase === 'bid' && G.turn === 0) {
+    parts.push(...bidOptions().map((b) => `<button type="button" data-bid="${b}" class="${b === 'PASS' ? '' : 'main'}">${bidText(b)}</button>`));
+  }
+  if (G.phase === 'play' && !G.done && G.turn === 0) {
+    const found = G.cand[0];
+    if (G.history.length === 0 && found.list.length && !G.declaredBy[0].length) {
+      parts.push(`<button type="button" id="declareBtn" aria-pressed="${G.wantDeclare}">أعلن ${esc(found.list.map((p) => PROJ[p.type].ar).join(' و'))}</button>`);
+    }
+    if (G.history.length === 0 && found.open) parts.push(`<span class="acts-note">${OPEN_AR[found.open]}</span>`);
+    const b = G.baloot;
+    if (b && b.seat === 0 && b.played === 1) parts.push(`<button type="button" id="balootBtn" aria-pressed="${G.balootCall}">بلوت مع الورقة الثانية</button>`);
+    const open = legalPlay(G.hands[0], G.trick, 0).open;
+    if (open) parts.push(`<span class="acts-note">${OPEN_AR[open]}</span>`);
+  }
+  el.innerHTML = parts.join('');
+}
+function renderBid() { renderScore(); renderPlayers(); renderStatus(); renderPile(false); renderHand(); renderActs(); }
+function renderTableState() {
+  renderBid();
+  const s = $('#proofShort'); if (s && G) s.textContent = G.commit.slice(0, 8);
+}
+function render() {
+  const land = state.screen === 'table' && state.layout === 'landscape';
+  frame.dataset.time = state.time; frame.dataset.colors = state.colors; frame.dataset.layout = land ? 'landscape' : 'portrait';
+  document.querySelectorAll('#strip .tab').forEach((b) => {
+    if (b.dataset.go === state.screen) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  const toastEl = $('#toast');
+  if (state.screen === 'home') frame.innerHTML = renderHome();
+  else if (state.screen === 'invite') frame.innerHTML = renderInvite();
+  else {
+    frame.innerHTML = renderTable();
+    if (G) renderTableState();
+    paintVoice();
+  }
+  if (toastEl) toastEl.remove();
+  fit();
+}
+function go(screen) {
+  if (!['home', 'invite', 'table'].includes(screen)) screen = 'home';
+  const was = state.screen;
+  if (was === 'table' && screen !== 'table') clearVoice();
+  state.screen = screen;
+  if (location.hash !== '#' + screen) { try { location.hash = screen; } catch {} }
+  if (screen === 'invite' && was !== 'invite') inviteSeat = null;
+  render();
+  if (screen !== 'table') return;
+  if (!G || G.done || G.phase === 'thrown') { newRound(); return; }
+  const id = ++runId;
+  if (G.turn === -1 && G.trick.length === 4 && settleTrick()) { renderTableState(); finish(); return; }
+  renderTableState();
+  loop(id);
+}
+
+/* ---------- Sheets ---------- */
+function overlay(html) {
+  closeOverlay();
+  const el = document.createElement('div');
+  el.className = 'overlay'; el.id = 'overlay'; el.dataset.layout = frame.dataset.layout;
+  el.innerHTML = `<div class="sheet-body" role="dialog" aria-modal="true">${html}</div>`;
+  frame.append(el);
+}
+function closeOverlay() { const o = $('#overlay'); if (o) o.remove(); }
+function showProof() {
+  if (!G) return;
+  const after = G.done;
+  overlay(`<h2>تأكد من عدالة الخلط</h2>
+    <p>قبل التوزيع نثبت ترتيب الأوراق بهذه البصمة. بعد اليد نكشف الترتيب، وتحسب البصمة بنفسك. إذا تطابقتا، فالترتيب لم يتغير أثناء اللعب.</p>
+    <div class="mono">${G.commit}</div>
+    ${after ? `<p class="ok">${G.verified ? '✓ تطابقت البصمة' : 'لم تتطابق البصمة'}</p><div class="mono">${G.payload}</div>`
+      : `<p>الترتيب مخفي حتى نهاية اليد.</p>`}
+    <p>في هذا النموذج يتم الخلط في جهازك. في اللعبة الفعلية يتولاه الخادم، ولن تكفي البصمة وحدها: تقييد وصول الموظفين يكمّلها.</p>
+    <button class="ghost" type="button" data-close>${after ? 'رجوع للنتيجة' : 'رجوع للطاولة'}</button>`);
+  if (after) $('#overlay [data-close]').dataset.result = '1';
+}
+function resultTitle(res) {
+  if (M.over) return M.winner === 0 ? 'الصكة لكم!' : M.winner === 1 ? 'راحت الصكة عليكم' : 'الصكة معلّقة على المحكّم';
+  if (res.outcome === 'PENDING') return 'يد معلّقة على المحكّم';
+  if (res.outcome === 'KABOOT') return res.kaboot === 0 ? 'كبوت لكم!' : 'كبوت عليكم';
+  const ours = team(G.buyer) === 0;
+  if (res.outcome === 'MADE') return ours ? 'شريتوا وكسبتوا' : 'كسبوا شراهم';
+  return ours ? 'خسرتوا الشراء' : 'خسروا شراهم!';
+}
+function showResult() {
+  const res = G.result;
+  const contract = G.contract === 'SUN' ? 'صن' : 'حكم ' + SUIT_AR[G.trump];
+  const projLine = (t) => G.declared[t].length ? esc(G.declared[t].map(projText).join('، ')) : '—';
+  const notes = [...new Set([...res.notes, ...(M.over && M.open ? [M.open] : [])])];
+  const top = G.history.reduce((a, b) => (b.pts > a.pts ? b : a), G.history[0]);
+  G.shareText = `صكّة: لنا ${M.score[0]} ولهم ${M.score[1]}. اليد ${contract}: ${res.game[0]} لنا و${res.game[1]} لهم. بصمة الخلط ${G.commit.slice(0, 8)}`;
+  overlay(`<h2>${resultTitle(res)}</h2>
+    <div class="share">${sceneHtml(state.region)}<div class="inner" style="background:rgb(6 33 28 / .45)">
+      <div class="big">${M.score[0]} : ${M.score[1]}</div>
+      <div class="line">${M.over ? 'النتيجة النهائية للصكة' : 'مجموع الصكة، والهدف 152'}</div>
+      <div class="line">${contract}، المشتري ${NAMES[G.buyer]}</div>
+    </div></div>
+    <div class="breakdown" role="table" aria-label="حساب اليد">
+      <span role="columnheader"></span><b role="columnheader">لنا</b><b role="columnheader">لهم</b>
+      <span>الأبناط</span><span>${res.abnat[0]}</span><span>${res.abnat[1]}</span>
+      <span>الأكلات</span><span>${res.tricks[0]}</span><span>${res.tricks[1]}</span>
+      <span>المشاريع المحسوبة</span><span>${res.proj[0]}</span><span>${res.proj[1]}</span>
+      <span>البلوت</span><span>${res.bal[0]}</span><span>${res.bal[1]}</span>
+      <strong>نقاط اليد</strong><strong>${res.game[0]}</strong><strong>${res.game[1]}</strong>
+    </div>
+    <p>مشاريعنا: ${projLine(0)}. مشاريعهم: ${projLine(1)}.${res.kaboot !== null ? ' كبوت: الفريق الآخر لا يحسب له شيء.' : ''}</p>
+    ${notes.map((n) => `<p class="pending">${OPEN_AR[n] || esc(n)}</p>`).join('')}
+    <p class="ok">${G.verified ? '✓ بصمة الخلط تطابقت' : 'لم تتطابق بصمة الخلط'}</p>
+    <div class="actions">
+      <button class="cta" type="button" id="again">${M.over ? 'صكة جديدة' : 'اليد التالية'}</button>
+      <button class="ghost" type="button" id="shareBtn">انسخ النتيجة</button>
+    </div>
+    <details><summary>أعد اليد أكلة بأكلة</summary><div class="replay">
+      ${G.history.map((h, i) => `<div class="trick-row"><span class="n">${i + 1}</span><span class="wrapcards">${h.cards.map((t) => `<span class="${t.seat === h.winner ? 'win' : ''}">${cardHtml(t.card, 'mini')}</span>`).join('')}</span><span class="who">${NAMES[h.winner]}<br>${h.pts} بنط</span></div>`).join('')}
+    </div></details>
+    <p>أكبر أكلة: ${top.winner === 0 ? 'أكلتك' : `أكلة ${NAMES[top.winner]}`}، ${top.pts} بنط.</p>
+    <button class="ghost" type="button" id="proofAfter">شوف إثبات الخلط</button>`);
+}
+
+/* ---------- Events ---------- */
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('button, summary');
+  if (!t) return;
+  if (t.dataset.go) { $('#panel').classList.remove('open'); go(t.dataset.go); return; }
+  if (t.dataset.set) { setOpt(t.dataset.set, t.dataset.val); return; }
+  if (t.id === 'panelOpen') { $('#panel').classList.add('open'); return; }
+  if (t.id === 'panelClose') { $('#panel').classList.remove('open'); return; }
+  if ('shareGame' in t.dataset) { shareGame(); return; }
+  if (t.id === 'freshMatch') { M = null; G = null; go('table'); return; }
+  if (t.id === 'seatPick') { inviteSeat = 1; render(); return; }
+  if (t.id === 'sit') {
+    if (!inviteSeat) { inviteSeat = 1; render(); return; }
+    go('table'); return;
+  }
+  if (t.id === 'voiceMic') { toggleVoice(); return; }
+  if (t.id === 'voiceHelp') { showVoiceHelp(); return; }
+  if (t.dataset.voiceExample) { closeOverlay(); answerVoice(t.dataset.voiceExample); return; }
+  if (t.id === 'proofBtn' || t.id === 'proofAfter') { clearVoice(); showProof(); return; }
+  if ('close' in t.dataset) { const again = t.dataset.result; closeOverlay(); if (again) showResult(); return; }
+  if (t.id === 'again') { newRound(); return; }
+  if (t.id === 'shareBtn') { copyText(G.shareText, 'نسخنا النتيجة، شاركها مع الشلة'); return; }
+  if (t.dataset.bid) { if (voiceSession) clearVoice(); const id = runId; applyBid(0, t.dataset.bid, id); loop(id); return; }
+  if (t.id === 'declareBtn') { G.wantDeclare = !G.wantDeclare; renderActs(); return; }
+  if (t.id === 'balootBtn') { G.balootCall = !G.balootCall; renderActs(); return; }
+  if (t.dataset.card) {
+    if (!G || G.done) return;
+    if (G.phase !== 'play') { toast('ننتظر نهاية الشراء'); return; }
+    if (G.turn !== 0) { toast(G.turn === -1 ? 'لحظة، نحسب الأكلة' : `مو دورك، ننتظر ${NAMES[G.turn]}`); return; }
+    const c = t.dataset.card;
+    if (!legalPlay(G.hands[0], G.trick, 0).cards.includes(c)) {
+      t.classList.remove('shake'); t.getBoundingClientRect(); t.classList.add('shake');
+      toast(illegalReason(c));
+      return;
+    }
+    if (voiceSession) clearVoice();
+    const id = runId;
+    playCard(0, c, id).then(() => loop(id));
+  }
+});
+new ResizeObserver(fit).observe($('#host')); // also catches the strip growing when web fonts load
+addEventListener('hashchange', () => { const h = location.hash.slice(1); if (h && h !== state.screen) go(h); });
+
+/* Hooks for automated checks */
+window.__sakka = { get game() { return G; }, get match() { return M; }, legalPlay, trickWinner, botChoice, botBid, scoreHand, detectProjects, projectWinner, conv, sha256 };
+
+// Snapshot the complete page before rendering game state or voice captions.
+const cleanGamePage = '<!doctype html>\n' + document.documentElement.outerHTML;
+renderControls();
+const startHash = location.hash.slice(1);
+go(['home', 'invite', 'table'].includes(startHash) ? startHash : 'home');
+</script>
+</body>
+</html>
