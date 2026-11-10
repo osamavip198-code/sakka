@@ -779,7 +779,7 @@ function endBidding(contract, buyer, trump, id) {
 async function loop(id) {
   while (G && id === runId && !G.done && G.turn > 0 && state.screen === 'table') {
     await wait(G.phase === 'bid' ? 760 : 620);
-    while (voiceSession && id === runId && state.screen === 'table') await wait(100);
+    while (voiceSession && !voiceSession.open && id === runId && state.screen === 'table') await wait(100);
     if (id !== runId || state.screen !== 'table' || G.done || G.turn <= 0) return;
     const seat = G.turn;
     if (G.phase === 'bid') applyBid(seat, botBid(seat), id);
@@ -930,6 +930,7 @@ let voiceCaption = '';
 let voiceDetail = '';
 let voiceCaptionTimer;
 let speaking = null;
+let resumeFallback;
 
 function paintVoice() {
   const mic = $('#voiceMic');
@@ -950,13 +951,17 @@ function showVoice(text, detail = '') {
   if (text && !voiceSession) voiceCaptionTimer = setTimeout(() => showVoice(''), 7000);
 }
 
-function clearVoice() {
+function clearVoice(force = false) {
   const active = voiceSession;
+  // The open mic keeps listening across hands and taps; only an explicit stop or leaving the table closes it.
+  if (active && active.open && !force) { showVoice(''); return; }
   voiceSession = null;
   if (active) {
     clearTimeout(active.timer);
+    clearTimeout(active.resumeTimer);
     try { active.recognition.abort(); } catch {}
   }
+  clearTimeout(resumeFallback);
   if (speaking) voiceSynth.cancel();
   speaking = null;
   showVoice('');
@@ -974,11 +979,15 @@ function sayVoice(text, heard = '') {
   utterance.rate = 0.96;
   if (speaking) voiceSynth.cancel();
   speaking = utterance;
-  utterance.onend = () => { if (speaking === utterance) speaking = null; };
+  pauseOpenMic();
+  clearTimeout(resumeFallback);
+  resumeFallback = setTimeout(resumeOpenMic, 12000);
+  utterance.onend = () => { if (speaking === utterance) { speaking = null; resumeOpenMic(); } };
   utterance.onerror = () => {
     if (speaking !== utterance) return;
     speaking = null;
     showVoice(text, 'الصوت العربي غير متاح في هذا المتصفح.');
+    resumeOpenMic();
   };
   voiceSynth.speak(utterance);
 }
@@ -1043,66 +1052,110 @@ function answerVoice(heard) {
       break;
     case 'greeting': sayVoice('يا هلا والله. حيّاك على الطاولة!', heard); break;
     case 'cheer': sayVoice('كفوك الطيب! يلا نكمل.', heard); break;
-    default: sayVoice('ما فهمت عليك. جرّب: كم لنا؟ أو دور مين؟', heard);
+    default: sayVoice('فهمت', heard);
   }
 }
 
-function toggleVoice() {
-  if (voiceSession) { clearVoice(); return; }
-  if (!VoiceRecognition) {
-    showVoice('المايك غير مدعوم داخل هذا المتصفح، مثل متصفح واتساب. افتح الرابط في Safari أو Chrome، أو كمّل باللمس.');
-    return;
-  }
-  if (!G || G.done) { showVoice('ابدأ صكّة عشان تكلّم البوت.'); return; }
-  if (speaking) { voiceSynth.cancel(); speaking = null; }
+const MIC_FATAL = {
+  'not-allowed': 'اسمح للمتصفح باستخدام المايك ثم جرّب من جديد.',
+  'service-not-allowed': 'خدمة التعرّف على الصوت غير متاحة. في iPhone فعّل «الإملاء» من الإعدادات > عام > لوحة المفاتيح، أو جرّب Chrome.',
+  'audio-capture': 'ما قدرنا نوصل للمايك. تحقق من إعدادات الجهاز.',
+  'language-not-supported': 'المتصفح ما يدعم التعرّف بالعربية هنا.',
+};
+
+function pauseOpenMic() {
+  const active = voiceSession;
+  if (!active || !active.open || active.paused) return;
+  active.paused = true;
+  active.gen += 1;
+  clearTimeout(active.resumeTimer);
+  try { active.recognition.abort(); } catch {}
+}
+
+function resumeOpenMic() {
+  const active = voiceSession;
+  if (!active || !active.open || !active.paused) return;
+  clearTimeout(active.resumeTimer);
+  active.resumeTimer = setTimeout(() => {
+    if (voiceSession !== active || !active.paused) return;
+    active.paused = false;
+    startOpenMic(active);
+  }, 500);
+}
+
+function startOpenMic(active) {
+  if (voiceSession !== active || active.paused) return;
   const recognition = new VoiceRecognition();
-  const active = { recognition, id: runId, heard: '', error: '' };
-  voiceSession = active;
+  active.recognition = recognition;
+  active.startedAt = Date.now();
+  active.gen += 1;
   recognition.lang = 'ar-SA';
-  recognition.continuous = false;
+  recognition.continuous = true;
   recognition.interimResults = false;
   recognition.onstart = () => {
-    if (voiceSession === active) showVoice('أسمعك…', 'جرّب: «كم لنا؟» أو «دور مين؟»');
+    if (voiceSession !== active || active.recognition !== recognition) return;
+    if (!active.greeted) {
+      active.greeted = true;
+      showVoice('المايك مفتوح، قل أي شي.', 'جرّب: «كم لنا؟» أو «دور مين؟»');
+    }
   };
   recognition.onresult = (event) => {
-    if (voiceSession === active) active.heard = event.results[event.resultIndex]?.[0]?.transcript || '';
+    if (voiceSession !== active || active.recognition !== recognition || active.paused) return;
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const result = event.results[i];
+      const heard = result.isFinal ? (result[0]?.transcript || '').trim() : '';
+      if (heard) answerVoice(heard);
+    }
   };
   recognition.onerror = (event) => {
-    if (voiceSession !== active) return;
-    active.error = ({
-      'not-allowed': 'اسمح للمتصفح باستخدام المايك ثم جرّب من جديد.',
-      'service-not-allowed': 'خدمة التعرّف على الصوت غير متاحة. في iPhone فعّل «الإملاء» من الإعدادات > عام > لوحة المفاتيح، أو جرّب Chrome.',
-      'audio-capture': 'ما قدرنا نوصل للمايك. تحقق من إعدادات الجهاز.',
-      'network': 'تعذّر الاتصال بخدمة التعرّف على الصوت. جرّب مرة ثانية.',
-      'no-speech': 'ما سمعتك. اضغط المايك وجرّب مرة ثانية.',
-      'language-not-supported': 'المتصفح ما يدعم التعرّف بالعربية هنا.',
-    })[event.error] || 'ما اشتغل المايك. تقدر تكمل باللمس.';
+    if (voiceSession !== active || active.recognition !== recognition) return;
+    if (MIC_FATAL[event.error]) active.fatal = MIC_FATAL[event.error];
   };
   recognition.onend = () => {
-    if (voiceSession !== active) return;
-    clearTimeout(active.timer);
-    voiceSession = null;
-    if (runId !== active.id || state.screen !== 'table') { showVoice(''); return; }
-    if (active.error) showVoice(active.error);
-    else if (active.heard) answerVoice(active.heard);
-    else showVoice('ما سمعتك. اضغط المايك وجرّب مرة ثانية.');
+    if (voiceSession !== active || active.recognition !== recognition || active.paused) return;
+    if (active.fatal) { const why = active.fatal; clearVoice(true); showVoice(why); return; }
+    // Safari ends a listening session by itself after a while, so open it again.
+    // If it keeps ending right away, stop instead of flickering the mic.
+    active.quick = Date.now() - active.startedAt < 1200 ? active.quick + 1 : 0;
+    if (active.quick >= 5) {
+      clearVoice(true);
+      showVoice('المايك ما استقر هنا. اضغط المايك من جديد أو كمّل باللمس.');
+      return;
+    }
+    const gen = active.gen;
+    setTimeout(() => {
+      if (voiceSession === active && active.gen === gen && !active.paused) startOpenMic(active);
+    }, 350);
   };
-  showVoice('نفتح المايك…');
-  active.timer = setTimeout(() => {
-    if (voiceSession !== active) return;
-    clearVoice();
-    showVoice('انتهت مهلة الاستماع. اضغط المايك وجرّب مرة ثانية.');
-  }, 10000);
   try { recognition.start(); } catch {
-    clearVoice();
+    clearVoice(true);
     showVoice('تعذّر تشغيل المايك. افتح الرابط في Safari أو Chrome، أو كمّل باللمس.');
   }
 }
 
+function toggleVoice() {
+  if (voiceSession) { clearVoice(true); return; }
+  if (!VoiceRecognition) {
+    showVoice('المايك غير مدعوم داخل هذا المتصفح، مثل متصفح واتساب. افتح الرابط في Safari أو Chrome، أو كمّل باللمس.');
+    return;
+  }
+  if (!G || G.done) { showVoice('ابدأ صكّة عشان تفتح المايك.'); return; }
+  if (speaking) { voiceSynth.cancel(); speaking = null; }
+  const active = { open: true, recognition: null, paused: false, fatal: '', quick: 0, startedAt: 0, gen: 0, greeted: false };
+  voiceSession = active;
+  showVoice('نفتح المايك…');
+  startOpenMic(active);
+}
+
+// An open mic must not stay on when the page is hidden or the phone is locked.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && voiceSession && voiceSession.open) clearVoice(true);
+});
+
 function showVoiceHelp() {
-  clearVoice();
+  clearVoice(true);
   overlay(`<h2>سوالف الطاولة</h2>
-    <p>اضغط «كلّم البوت»، اسمح باستخدام المايك، وقل جملة واحدة. جرّب هالجمل هنا، أو اضغط زرًا لسماع الرد.</p>
+    <p>اضغط «كلّم البوت» واسمح باستخدام المايك. يبقى المايك مفتوحًا لين تضغط «إيقاف»، وأي كلام ما تعرفه اللعبة ترد عليه بـ«فهمت». جرّب هالجمل هنا، أو اضغط زرًا لسماع الرد.</p>
     <div class="voice-examples">
       <button type="button" data-voice-example="كم لنا؟">كم لنا؟</button>
       <button type="button" data-voice-example="دور مين؟">دور مين؟</button>
@@ -1383,7 +1436,7 @@ function render() {
 function go(screen) {
   if (!['home', 'invite', 'table'].includes(screen)) screen = 'home';
   const was = state.screen;
-  if (was === 'table' && screen !== 'table') clearVoice();
+  if (was === 'table' && screen !== 'table') clearVoice(true);
   state.screen = screen;
   if (location.hash !== '#' + screen) { try { location.hash = screen; } catch {} }
   if (screen === 'invite' && was !== 'invite') inviteSeat = null;
@@ -1478,7 +1531,7 @@ document.addEventListener('click', (e) => {
   if (t.id === 'voiceMic') { toggleVoice(); return; }
   if (t.id === 'voiceHelp') { showVoiceHelp(); return; }
   if (t.dataset.voiceExample) { closeOverlay(); answerVoice(t.dataset.voiceExample); return; }
-  if (t.id === 'proofBtn' || t.id === 'proofAfter') { clearVoice(); showProof(); return; }
+  if (t.id === 'proofBtn' || t.id === 'proofAfter') { clearVoice(true); showProof(); return; }
   if ('close' in t.dataset) { const again = t.dataset.result; closeOverlay(); if (again) showResult(); return; }
   if (t.id === 'again') { newRound(); return; }
   if (t.id === 'shareBtn') { copyText(G.shareText, 'نسخنا النتيجة، شاركها مع الشلة'); return; }
